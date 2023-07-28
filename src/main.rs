@@ -1,5 +1,5 @@
-use pest_derive::*;
-use pest::*;
+use pest_derive::Parser;
+use pest::Parser;
 use std::fs;
 
 
@@ -8,7 +8,7 @@ use std::fs;
 struct MdParser;
 
 fn main() {
-    let input = fs::read_to_string("sample.md").expect("Failed to read the file.");
+    let input = fs::read_to_string("test/sample.md").expect("Failed to read the file.");
 
     match MdParser::parse(Rule::start, &input) {
         Ok(parsed) => {
