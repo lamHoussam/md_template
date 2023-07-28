@@ -1,0 +1,65 @@
+WHITESPACE = _{ (" " | "\t" | "\n" | "\r") }
+
+TRUE = { "True" }
+FALSE = { "False" }
+
+FOR = { "for" }
+ENDFOR = { "endfor" }
+IF = { "if" }
+ELSE = { "else" }
+ENDIF = { "endif" }
+LIST_OPEN = { "[" }
+LIST_CLOSE = { "]" }
+END_EXPRESSION = { ";;" }
+BLOC_OPEN = { "{{" }
+BLOC_CLOSE = { "}}" }
+PRINT = { "print" }
+ITER_KEYWORD = { "in" }
+DO = { "do" }
+
+string = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
+
+// The following rules have been adjusted to Pest's syntax
+
+start = { program }
+
+program = { (txt ~ program?) | (bloc ~ program?) }
+
+bloc = { BLOC_OPEN ~ expression_list ~ BLOC_CLOSE }
+
+expression_list = { (expression ~ (expression_list)?)? }
+
+expression = { if_statement | for_statement | (print_statement ~ END_EXPRESSION) }
+
+if_statement = { IF ~ variable_value ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF }
+
+for_statement = { 
+    FOR ~ variable ~ ITER_KEYWORD ~ variable_value ~ DO ~ expression_list ~ ENDFOR |
+    FOR ~ variable ~ ITER_KEYWORD ~ list_litteral ~ DO ~ expression_list ~ ENDFOR 
+}
+
+print_statement = { PRINT ~ string_expression }
+
+variable_value = { "$(" ~ variable_interior ~ ")" }
+
+variable_interior = { variable ~ ("." ~ variable_interior)? }
+
+list_litteral = { LIST_OPEN ~ list_interior ~ LIST_CLOSE }
+
+list_interior = { (string_litterals_interior | variables_list_interior)? }
+
+string_litterals_interior = { string ~ ("," ~ string_litterals_interior)? }
+
+variables_list_interior = { variable ~ ("," ~ variables_list_interior)? }
+
+non_composite_string_part = { string | variable_value }
+
+string_expression = { non_composite_string_part ~ ("." ~ string_expression)? }
+
+txt = @{ (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
+
+variable = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
+
+integer = { (ASCII_DIGIT)+ }
+
+boolean = { TRUE | FALSE }
