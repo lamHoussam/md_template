@@ -17,6 +17,9 @@ PRINT = { "print" }
 ITER_KEYWORD = { "in" }
 DO = { "do" }
 
+// Operators
+ASSIGNMENT_OPERATOR = { ":=" }
+
 string = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
 
 // The following rules have been adjusted to Pest's syntax
@@ -29,7 +32,12 @@ bloc = { BLOC_OPEN ~ expression_list ~ BLOC_CLOSE }
 
 expression_list = { (expression ~ (expression_list)?)? }
 
-expression = { if_statement | for_statement | (print_statement ~ END_EXPRESSION) }
+expression = { 
+    if_statement 
+    | for_statement 
+    | (print_statement ~ END_EXPRESSION) 
+    | (assignment_expression ~ END_EXPRESSION) 
+}
 
 if_statement = { IF ~ variable_value ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF }
 
@@ -55,6 +63,10 @@ variables_list_interior = { variable ~ ("," ~ variables_list_interior)? }
 non_composite_string_part = { string | variable_value }
 
 string_expression = { non_composite_string_part ~ ("." ~ string_expression)? }
+
+// Assignment
+assignment_expression = { variable ~ ASSIGNMENT_OPERATOR ~ assignment_values }
+assignment_values = { variable_value | string | integer | boolean | list_litteral }
 
 txt = @{ (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
 
