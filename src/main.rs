@@ -1,9 +1,9 @@
 use pest::iterators::Pairs;
 use pest_derive::Parser;
-use pest::{Parser, Token};
+use pest::{Parser, Token, RuleType};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::{fs, default};
+use std::fs;
 
 
 #[derive(Parser)]
@@ -15,6 +15,7 @@ enum Symbol {
     Integer(i32),
     Boolean(bool),
     Struct(HashMap<String, Symbol>),
+    List(Vec<Symbol>)
 }
 
 impl Debug for Symbol {
@@ -24,10 +25,33 @@ impl Debug for Symbol {
             Self::Integer(arg0) => f.debug_tuple("Integer").field(arg0).finish(),
             Self::Boolean(arg0) => f.debug_tuple("Boolean").field(arg0).finish(),
             Self::Struct(arg0) => f.debug_tuple("Struct").field(arg0).finish(),
+            Self::List(arg0) => f.debug_tuple("List").field(arg0).finish(),
         }
     }
 }
 
+fn get_symbol_from_variable_value(var_value: String) -> Symbol {
+    if var_value.starts_with('\'') {
+        return Symbol::String(var_value);
+    } else if var_value.contains("[") {
+        let mut list : Vec<Symbol> = Vec::new();
+        let string_values : Vec<&str> = var_value.split(",").collect();
+
+        for ele in string_values {
+            let v = ele.trim().replace("[", "").replace("]", "");
+            let s: Symbol = get_symbol_from_variable_value(v);
+            list.push(s);
+        }
+
+        return Symbol::List(list);
+    } else if var_value.eq("True") {
+        return Symbol::Boolean(true);
+    } else if var_value.eq("False") {
+        return Symbol::Boolean(false);
+    } else {
+        return Symbol::Integer(var_value.parse().unwrap());
+    }
+}
 
 fn parse_syntax_tree(node: Pairs<'_, Rule, >, variables: &mut HashMap<String, Symbol>) {
     let iter = node;
@@ -47,7 +71,18 @@ fn parse_syntax_tree(node: Pairs<'_, Rule, >, variables: &mut HashMap<String, Sy
                 let var_value: String = String::from(vars[1].trim());
 
                 println!("Variable: {:?}, Value: {:?}", var_name, var_value);
-                variables.insert(var_name, Symbol::String(var_value));
+                
+                let symb: Symbol = get_symbol_from_variable_value(var_value);
+                
+                match symb {
+                    Symbol::String(_) => println!("IsString"),
+                    Symbol::Integer(_) => println!("IsInteger"),
+                    Symbol::Boolean(_) => println!("IsBoolean"),
+                    Symbol::Struct(_) => println!("IsStruct"),
+                    Symbol::List(_) => println!("IsList"),
+                }
+
+                variables.insert(var_name, symb);
             }
             _default => {
                 println!("Other");
