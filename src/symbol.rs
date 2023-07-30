@@ -45,8 +45,8 @@ pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
         let final_string: &str = var_value.trim_matches('\'');
         return Symbol::String(final_string.to_string());
     } else if var_value.contains("[") {
-        let mut list : Vec<Symbol> = Vec::new();
-        let string_values : Vec<&str> = var_value.split(",").collect();
+        let mut list: Vec<Symbol> = Vec::new();
+        let string_values: Vec<&str> = var_value.split(",").collect();
 
         for ele in string_values {
             let v: String = ele.trim().replace("[", "").replace("]", "");

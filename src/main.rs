@@ -31,12 +31,46 @@ fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<
                     }
                 }
             }
-            final_string.push_str(var_value.to_string().as_str());            
+            final_string.push_str(var_value.to_string().as_str());
 
         }
         Rule::string => {
-            let added_str: &str= node.as_str().trim_matches('\'');
-            final_string.push_str(added_str);
+            // let added_str: &str= node.as_str().trim_matches('\'');
+            let iter: Pairs<'_, Rule> = node.into_inner();
+            let mut added_str: String = String::new();
+
+
+            for pair in iter {
+                match pair.as_rule() {
+                    Rule::escape_char => {
+
+                        let replacement = match pair.as_str() {
+                            r#"\'"# => "\'", 
+                            r#"\\"# => "\\", 
+                            r#"\n"# => "\n",
+                            r#"\t"# => "\t",
+                            r#"\r"# => "\r",
+                            r#"\0"# => "\0",
+                            _ => pair.as_str(),
+                        };
+
+                        added_str.push_str(replacement);
+                    },
+                    Rule::simple_string => {
+                        added_str.push_str(pair.as_str());
+                    },
+                    _default => {
+                        // added_str.push_str(pair.as_str());
+                    }
+                }
+            }
+
+            final_string.push_str(&added_str);
+
+            // let mut added_str: &str = node.as_str();
+            // added_str = &added_str[1..(added_str.len() - 1)];
+
+            // final_string.push_str(added_str);
         }
         _default => {
             let iter: Pairs<'_, Rule> = node.into_inner();
@@ -89,15 +123,9 @@ local_variables: &mut HashMap<String, Symbol>) -> Option<String> {
                 }
             }
             Rule::txt => {
-                println!("Pair: {:?}", &pair.as_span().as_str().to_string());
                 output_string.push_str(&pair.as_span().as_str().to_string());
-                // println!("{}", pair.as_str());
-                // let string_to_write: &str = node.as_str();
             }
-            
-            _default => {
-                // println!("Other");
-            }
+            _default => {}
         }
 
         let v = pair.into_inner();

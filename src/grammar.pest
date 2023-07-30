@@ -19,7 +19,14 @@ DO = { "do" }
 // Operators
 ASSIGNMENT_OPERATOR = { ":=" }
 
-string = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
+// string = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
+// string = { "\'" ~ (!"\'" ~ ANY)* ~ "\'" }
+
+escape_char = { ("\\" ~ ("\'" | "\\" | "n" | "t" | "r" | "0" | "x" | "u" ~ ASCII_DIGIT* | ASCII_DIGIT{3})) }
+simple_string = { (!"\'" ~ ASCII) }
+string = { 
+    "\'" ~ (escape_char | simple_string)* ~ "\'"
+}
 
 start = { program }
 
