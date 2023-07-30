@@ -13,7 +13,6 @@ LIST_CLOSE = { "]" }
 END_EXPRESSION = { ";;" }
 BLOC_OPEN = { "{{" }
 BLOC_CLOSE = { "}}" }
-PRINT = { "print" }
 ITER_KEYWORD = { "in" }
 DO = { "do" }
 
@@ -46,7 +45,7 @@ for_statement = {
     FOR ~ variable ~ ITER_KEYWORD ~ list_litteral ~ DO ~ expression_list ~ ENDFOR 
 }
 
-print_statement = { PRINT ~ string_expression }
+print_statement = { "print" ~ string_expression }
 
 variable_value = { "$(" ~ variable_interior ~ ")" }
 

@@ -1,65 +1,60 @@
-use pest::iterators::Pairs;
-use pest_derive::Parser;
-use pest::{Parser, Token, RuleType};
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::fs;
+pub mod symbol;
 
+use pest::iterators::{Pairs, Pair};
+use pest_derive::Parser;
+use pest::Parser;
+use std::collections::HashMap;
+use std::fs::{self, File};
+
+pub use symbol::*;
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
 struct MdParser;
 
-enum Symbol {
-    String(String),
-    Integer(i32),
-    Boolean(bool),
-    Struct(HashMap<String, Symbol>),
-    List(Vec<Symbol>)
-}
 
-impl Debug for Symbol {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::String(arg0) => f.debug_tuple("String").field(arg0).finish(),
-            Self::Integer(arg0) => f.debug_tuple("Integer").field(arg0).finish(),
-            Self::Boolean(arg0) => f.debug_tuple("Boolean").field(arg0).finish(),
-            Self::Struct(arg0) => f.debug_tuple("Struct").field(arg0).finish(),
-            Self::List(arg0) => f.debug_tuple("List").field(arg0).finish(),
+fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
+    let mut final_string: String = String::new();
+    match node.as_rule() {
+        Rule::variable_interior => {
+            let null_string: &Symbol = &Symbol::String(String::from("null"));
+            let key: String = String::from(node.as_str());
+            let var_value: &Symbol;
+            
+            match local_variables.get(&key) {
+                Some(value) => var_value = value,
+                None => {
+                    match global_variables.get(&key) {
+                        Some(value) => var_value = value,
+                        None => var_value = &null_string,
+                    }
+                }
+            }
+            final_string.push_str(var_value.to_string().as_str());            
+
         }
-    }
-}
-
-fn get_symbol_from_variable_value(var_value: String) -> Symbol {
-    if var_value.starts_with('\'') {
-        return Symbol::String(var_value);
-    } else if var_value.contains("[") {
-        let mut list : Vec<Symbol> = Vec::new();
-        let string_values : Vec<&str> = var_value.split(",").collect();
-
-        for ele in string_values {
-            let v = ele.trim().replace("[", "").replace("]", "");
-            let s: Symbol = get_symbol_from_variable_value(v);
-            list.push(s);
+        Rule::string => {
+            let added_str: &str= node.as_str().trim_matches('\'');
+            final_string.push_str(added_str);
         }
-
-        return Symbol::List(list);
-    } else if var_value.eq("True") {
-        return Symbol::Boolean(true);
-    } else if var_value.eq("False") {
-        return Symbol::Boolean(false);
-    } else {
-        return Symbol::Integer(var_value.parse().unwrap());
+        _default => {
+            let iter: Pairs<'_, Rule> = node.into_inner();
+            for pair in iter {
+                final_string.push_str(parse_string_expression(pair, global_variables, local_variables).as_str());
+            }
+        },
     }
+
+    return final_string;
 }
 
-fn parse_syntax_tree(node: Pairs<'_, Rule, >, variables: &mut HashMap<String, Symbol>) {
-    let iter = node;
+fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>
+                    , local_variables: &mut HashMap<String, Symbol>) {
+    let iter: Pairs<'_, Rule> = node;
     for pair in iter {
 
         match pair.as_rule() {
             Rule::assignment_expression => {
-                // let tokens = pair.clone().tokens();
                 let assignment_exp: &str = pair.as_str();
                 let vars: Vec<&str> = assignment_exp.split(":=").collect();
                 if vars.len() != 2 {
@@ -74,57 +69,69 @@ fn parse_syntax_tree(node: Pairs<'_, Rule, >, variables: &mut HashMap<String, Sy
                 
                 let symb: Symbol = get_symbol_from_variable_value(var_value);
                 
-                match symb {
-                    Symbol::String(_) => println!("IsString"),
-                    Symbol::Integer(_) => println!("IsInteger"),
-                    Symbol::Boolean(_) => println!("IsBoolean"),
-                    Symbol::Struct(_) => println!("IsStruct"),
-                    Symbol::List(_) => println!("IsList"),
-                }
+                // match symb {
+                //     Symbol::String(_) => println!("IsString"),
+                //     Symbol::Integer(_) => println!("IsInteger"),
+                //     Symbol::Boolean(_) => println!("IsBoolean"),
+                //     Symbol::Struct(_) => println!("IsStruct"),
+                //     Symbol::List(_) => println!("IsList"),
+                // }
 
-                variables.insert(var_name, symb);
+                global_variables.insert(var_name, symb);
+            }
+            Rule::print_statement => {
+                // println!("Print Expression: {:#?}", pair.clone().tokens());
+                let node: Pairs<'_, Rule> = pair.clone().into_inner();
+                match node.peek() {
+                    Some(expression) => {
+                        let printed_expression: String = parse_string_expression(expression, global_variables, local_variables);
+                        println!("Expression: {}", printed_expression);
+                    },
+                    None => println!("Exmpty"),
+                }
             }
             _default => {
-                println!("Other");
+                // println!("Other");
             }
         }
 
         let v = pair.into_inner();
-        parse_syntax_tree(v, variables);
+        parse_syntax_tree(v, global_variables, local_variables);
     }
 }
 
 fn main() {
     let data_file_path: &str = "data/data.txt";
     let sample_file_path: &str = "test/sample.md";
+    let output_file_path: &str = "output/file.md";
 
     let data_file: String = fs::read_to_string(data_file_path).expect("Failed to read data file");
     let sample_file: String = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");
     
-    let mut variables: HashMap<String, Symbol> = HashMap::new();
+    let mut output_file: File = match File::create(output_file_path) {
+        Ok(file) => file,
+        Err(_) => panic!("Couldn't create output file"),
+    };
+
+
+    let mut global_variables: HashMap<String, Symbol> = HashMap::new();
+    let mut local_variables: HashMap<String, Symbol> = HashMap::new();
 
     println!("Data file: ");
     match MdParser::parse(Rule::start, &data_file) {
         Ok(parsed) => {
-            parse_syntax_tree(parsed, &mut variables);
+            parse_syntax_tree(parsed, &mut global_variables, &mut local_variables);
         }
         Err(e) => eprintln!("Error while parsing: {:?}", e),
     }
 
-    // println!("Variables: {:#?}", variables);
-    for ele in variables {
-        let k = ele.0;
-        let v = ele.1;
-
-        println!("Key: {:?}, Value: {:?}", k, v);
-    }
+    println!("Variables: {:#?}", global_variables);
 
     println!("Sample file: ");
     match MdParser::parse(Rule::start, &sample_file) {
         Ok(parsed) => {
-            // for pair in parsed {
-            //     println!("Rule: {:#?}, Span: {:#?}", pair.as_rule(), pair.as_span());
-            // }
+            parse_syntax_tree(parsed, &mut global_variables, &mut local_variables);
+
         }
         Err(e) => eprintln!("Error while parsing: {:?}", e),
     }
