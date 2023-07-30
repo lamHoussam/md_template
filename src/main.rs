@@ -2,6 +2,7 @@ pub mod symbol;
 
 use pest::iterators::{Pairs, Pair};
 use pest::Parser;
+use pest::unicode::ID_CONTINUE;
 use core::panic;
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -36,34 +37,45 @@ fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<
         }
         Rule::string => {
             // let added_str: &str= node.as_str().trim_matches('\'');
-            let iter: Pairs<'_, Rule> = node.into_inner();
-            let mut added_str: String = String::new();
 
+            // println!("Node: {:?}", node.as_str());
+            // let iter: Pairs<'_, Rule> = node.into_inner();
+            let mut added_str: String = String::from(node.as_str().to_string());
 
-            for pair in iter {
-                match pair.as_rule() {
-                    Rule::escape_char => {
+            added_str = added_str.replace(r#"\'"#, "\'")
+                                .replace(r#"\\"#, "\\")
+                                .replace(r#"\n"#, "\n")
+                                .replace(r#"\t"#, "\t")
+                                .replace(r#"\r"#, "\r")
+                                .replace(r#"\0"#, "\0");
 
-                        let replacement = match pair.as_str() {
-                            r#"\'"# => "\'", 
-                            r#"\\"# => "\\", 
-                            r#"\n"# => "\n",
-                            r#"\t"# => "\t",
-                            r#"\r"# => "\r",
-                            r#"\0"# => "\0",
-                            _ => pair.as_str(),
-                        };
+            println!("Node {:?}", added_str);
 
-                        added_str.push_str(replacement);
-                    },
-                    Rule::simple_string => {
-                        added_str.push_str(pair.as_str());
-                    },
-                    _default => {
-                        // added_str.push_str(pair.as_str());
-                    }
-                }
-            }
+            // for pair in iter {
+            //     println!("Space debug: [{}]", pair.as_str());
+            //     match pair.as_rule() {
+            //         Rule::escape_char => {
+
+            //             let replacement = match pair.as_str() {
+            //                 r#"\'"# => "\'", 
+            //                 r#"\\"# => "\\", 
+            //                 r#"\n"# => "\n",
+            //                 r#"\t"# => "\t",
+            //                 r#"\r"# => "\r",
+            //                 r#"\0"# => "\0",
+            //                 _ => pair.as_str(),
+            //             };
+
+            //             added_str.push_str(replacement);
+            //         },
+            //         Rule::simple_string => {
+            //             added_str.push_str(pair.as_str());
+            //         },
+            //         _default => {
+            //             // added_str.push_str(pair.as_str());
+            //         }
+            //     }
+            // }
 
             final_string.push_str(&added_str);
 

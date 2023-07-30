@@ -23,7 +23,10 @@ ASSIGNMENT_OPERATOR = { ":=" }
 // string = { "\'" ~ (!"\'" ~ ANY)* ~ "\'" }
 
 escape_char = { ("\\" ~ ("\'" | "\\" | "n" | "t" | "r" | "0" | "x" | "u" ~ ASCII_DIGIT* | ASCII_DIGIT{3})) }
-simple_string = { (!"\'" ~ ASCII) }
+simple_string = { (!"'" ~ ANY) }
+// simple_string = { (!"\'" ~ ASCII) }
+// simple_string = { (!"'" ~ (!WHITESPACE ~ ANY)) }
+
 string = { 
     "\'" ~ (escape_char | simple_string)* ~ "\'"
 }
