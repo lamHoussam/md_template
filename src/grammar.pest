@@ -21,8 +21,6 @@ ASSIGNMENT_OPERATOR = { ":=" }
 
 string = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
 
-// The following rules have been adjusted to Pest's syntax
-
 start = { program }
 
 program = { (txt ~ program?) | (bloc ~ program?) }

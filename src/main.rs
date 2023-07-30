@@ -1,14 +1,15 @@
 pub mod symbol;
 
 use pest::iterators::{Pairs, Pair};
-use pest_derive::Parser;
 use pest::Parser;
+use core::panic;
 use std::collections::HashMap;
 use std::fs::{self, File};
+use std::io::Write;
 
-pub use symbol::*;
+pub use symbol::{Symbol, get_symbol_from_variable_value};
 
-#[derive(Parser)]
+#[derive(pest_derive::Parser)]
 #[grammar = "grammar.pest"]
 struct MdParser;
 
@@ -48,9 +49,12 @@ fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<
     return final_string;
 }
 
-fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>
-                    , local_variables: &mut HashMap<String, Symbol>) {
+fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>, 
+local_variables: &mut HashMap<String, Symbol>) -> Option<String> {
+
     let iter: Pairs<'_, Rule> = node;
+    let mut output_string: String = String::new();
+
     for pair in iter {
 
         match pair.as_rule() {
@@ -59,7 +63,7 @@ fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<Str
                 let vars: Vec<&str> = assignment_exp.split(":=").collect();
                 if vars.len() != 2 {
                     println!("Error in variable declaration");
-                    return;
+                    return None;
                 }
 
                 let var_name: String = String::from(vars[0].trim());
@@ -68,14 +72,6 @@ fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<Str
                 println!("Variable: {:?}, Value: {:?}", var_name, var_value);
                 
                 let symb: Symbol = get_symbol_from_variable_value(var_value);
-                
-                // match symb {
-                //     Symbol::String(_) => println!("IsString"),
-                //     Symbol::Integer(_) => println!("IsInteger"),
-                //     Symbol::Boolean(_) => println!("IsBoolean"),
-                //     Symbol::Struct(_) => println!("IsStruct"),
-                //     Symbol::List(_) => println!("IsList"),
-                // }
 
                 global_variables.insert(var_name, symb);
             }
@@ -84,20 +80,33 @@ fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<Str
                 let node: Pairs<'_, Rule> = pair.clone().into_inner();
                 match node.peek() {
                     Some(expression) => {
-                        let printed_expression: String = parse_string_expression(expression, global_variables, local_variables);
-                        println!("Expression: {}", printed_expression);
+                        let printed_expression: String = parse_string_expression(expression, global_variables, local_variables);                        
+                        
+                        output_string.push_str(&printed_expression);
+                        // println!("{}", printed_expression);
                     },
                     None => println!("Exmpty"),
                 }
             }
+            Rule::txt => {
+                println!("Pair: {:?}", &pair.as_span().as_str().to_string());
+                output_string.push_str(&pair.as_span().as_str().to_string());
+                // println!("{}", pair.as_str());
+                // let string_to_write: &str = node.as_str();
+            }
+            
             _default => {
                 // println!("Other");
             }
         }
 
         let v = pair.into_inner();
-        parse_syntax_tree(v, global_variables, local_variables);
+        match parse_syntax_tree(v, global_variables, local_variables) {
+            Some(parsed) => output_string.push_str(&parsed),
+            None => return None,
+        }
     }
+    return Some(output_string);
 }
 
 fn main() {
@@ -112,7 +121,6 @@ fn main() {
         Ok(file) => file,
         Err(_) => panic!("Couldn't create output file"),
     };
-
 
     let mut global_variables: HashMap<String, Symbol> = HashMap::new();
     let mut local_variables: HashMap<String, Symbol> = HashMap::new();
@@ -130,8 +138,15 @@ fn main() {
     println!("Sample file: ");
     match MdParser::parse(Rule::start, &sample_file) {
         Ok(parsed) => {
-            parse_syntax_tree(parsed, &mut global_variables, &mut local_variables);
-
+            match parse_syntax_tree(parsed, &mut global_variables, &mut local_variables) {
+                Some(output) => {
+                    match output_file.write_all(output.as_bytes()) {
+                        Ok(_) => {},
+                        Err(_) => panic!("Couldn't write to output file"),
+                    }
+                },
+                None => panic!("Couldn't generate output string"),
+            }
         }
         Err(e) => eprintln!("Error while parsing: {:?}", e),
     }

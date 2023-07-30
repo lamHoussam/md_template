@@ -35,7 +35,6 @@ impl ToString for Symbol {
                 let result: String = strings.join(", ");
 
                 return result;
-            
             },
         }
     }
