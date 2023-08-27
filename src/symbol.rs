@@ -61,13 +61,14 @@ pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
         let string_values: Vec<&str> = var_value.split(",").collect();
         
         for ele in string_values {
-            let v: String = ele.trim().replace("[", "").replace("]", "");
+            let v: String = ele.replace("[", "").replace("]", "").trim().to_string();
+
+            // println!("v: {}", v);
             if !v.is_empty() {
                 let s: Symbol = get_symbol_from_variable_value(v);
                 list.push(s);
             }
         }
-        
         return Symbol::List(list);
     } else if var_value.eq("True") {
         return Symbol::Boolean(true);
