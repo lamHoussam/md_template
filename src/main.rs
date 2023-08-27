@@ -37,19 +37,19 @@ fn main() {
 
     println!("Variables: {:#?}", global_variables);
 
-    println!("Sample file: ");
-    match MdParser::parse(Rule::start, &sample_file) {
-        Ok(parsed) => {
-            match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
-                Some(output) => {
-                    match output_file.write_all(output.as_bytes()) {
-                        Ok(_) => {},
-                        Err(_) => panic!("Couldn't write to output file"),
-                    }
-                },
-                None => panic!("Couldn't generate output string"),
-            }
-        }
-        Err(e) => eprintln!("Error while parsing: {:?}", e),
-    }
+    // println!("Sample file: ");
+    // match MdParser::parse(Rule::start, &sample_file) {
+    //     Ok(parsed) => {
+    //         match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
+    //             Some(output) => {
+    //                 match output_file.write_all(output.as_bytes()) {
+    //                     Ok(_) => {},
+    //                     Err(_) => panic!("Couldn't write to output file"),
+    //                 }
+    //             },
+    //             None => panic!("Couldn't generate output string"),
+    //         }
+    //     }
+    //     Err(e) => eprintln!("Error while parsing: {:?}", e),
+    // }
 }
