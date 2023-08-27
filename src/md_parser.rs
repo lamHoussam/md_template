@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, default, ptr::null};
 use pest::iterators::{Pairs, Pair};
 use crate::{Symbol, get_symbol_from_variable_value};
 
@@ -9,6 +9,112 @@ use crate::{Symbol, get_symbol_from_variable_value};
 pub struct MdParser;
 
 impl MdParser {
+
+    pub fn parse_for_statement(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
+        let mut final_string: String = String::new();
+        let iter: Pair<'_, Rule> = node;
+        let mut cloned_lst: Vec<Symbol>;
+
+        // let mut iterable: Vec<Symbol> = Vec::new();
+        // let mut collection_size: usize = 0;
+
+        let mut value_iterator_option: Option<std::slice::Iter<'_, Symbol>> = None;
+        // let mut value_iterator: Iterator<Symbol>;
+
+        let mut iter_var_name: String = String::new();
+
+        // let it = iter.into_inner().clone();
+        // println!("Its : {:#?}", it);
+
+        for pair in iter.into_inner() {
+            println!("Rule: {:?}", pair.as_rule());
+            match pair.as_rule() {
+                Rule::variable => {
+                    iter_var_name = pair.as_str().to_string();
+                    println!("Variable: {}", iter_var_name);
+                }
+                Rule::variable_value => {
+                    println!("Value: {}", pair.as_str());
+                    match pair.into_inner().peek() {
+                        Some(iterable_name_pair) => {
+                            
+                            let iterable_name: &str = iterable_name_pair.as_str();
+                            println!("iterable name: {}", iterable_name);
+
+
+                            // TODO: Refactor
+                            value_iterator_option = None;
+                            if let Some(value) = local_variables.get(&iterable_name.to_string()).cloned() {
+                                match value {
+                                    Symbol::String(_) => todo!(),
+                                    Symbol::Integer(_) => todo!(),
+                                    Symbol::Boolean(_) => todo!(),
+                                    Symbol::Struct(_) => todo!(),
+                                    Symbol::List(lst) => {
+                                        cloned_lst = lst.clone();
+                                        value_iterator_option = Some(cloned_lst.iter());
+                                    },
+                                }
+                            } else if let Some(value) = global_variables.get_mut(&iterable_name.to_string()).cloned() {
+                                match value {
+                                    Symbol::String(_) => todo!(),
+                                    Symbol::Integer(_) => todo!(),
+                                    Symbol::Boolean(_) => todo!(),
+                                    Symbol::Struct(_) => todo!(),
+                                    Symbol::List(lst) => {
+                                        cloned_lst = lst.clone();
+                                        value_iterator_option = Some(cloned_lst.iter());
+                                    },
+                                }
+                            }
+
+                        } ,
+                        None => value_iterator_option = None,
+                    }
+
+                },
+                Rule::expression_list => {
+                    let node = &pair.into_inner();
+
+                    
+                    loop {
+                        if let Some(mut val_iterator) = value_iterator_option {
+                            match val_iterator.next() {
+                                Some(value) => {
+                                    local_variables.insert(iter_var_name.to_string(), value.clone());
+                                    value_iterator_option = Some(val_iterator);
+                                },
+                                None => {
+                                    value_iterator_option = None;
+                                    break;
+                                },
+                            }
+                        }
+                        
+                        
+                        match MdParser::parse_syntax_tree(node, global_variables, local_variables) {
+                            Some(output) => {
+                                final_string.push_str(&output);
+                                println!("{}", output);
+                            } 
+                            None => todo!(),
+                        }
+
+                    }
+                },
+
+                _default => {
+
+                }
+            }
+
+            // println!("Pair: {:#?}", pair.as_str());
+        }
+
+        println!("Final: {}", final_string);
+        return final_string;
+    }
+
     pub fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
         let mut final_string: String = String::new();
         match node.as_rule() {
@@ -55,14 +161,16 @@ impl MdParser {
         return final_string;
     }
     
-    pub fn parse_syntax_tree(node: Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>, 
+    pub fn parse_syntax_tree(node: &Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>, 
     local_variables: &mut HashMap<String, Symbol>) -> Option<String> {
-    
-        let iter: Pairs<'_, Rule> = node;
+        let iter: Pairs<'_, Rule> = node.clone();
+        // let iter = unsafe { node.copied() };
+        // match node.cloned::<Pair<'_, Rule>>() {
+            
+        // }
         let mut output_string: String = String::new();
     
         for pair in iter {
-    
             match pair.as_rule() {
                 Rule::assignment_expression => {
                     let assignment_exp: &str = pair.as_str();
@@ -95,15 +203,19 @@ impl MdParser {
                     }
                 }
                 Rule::txt => {
-                    println!("{:?}", pair.as_str());
+                    // println!("{:?}", pair.as_str());
                     // println!("Text Inner : {:#?}", pair.clone().into_inner());
                     output_string.push_str(pair.as_str());
                     // output_string.push_str(&pair.as_span().as_str().to_string());
                 }
+                Rule::for_statement => {
+                    let output = MdParser::parse_for_statement(pair.clone(), global_variables, local_variables);
+                    output_string.push_str(&output);
+                }
                 _default => {}
             }
     
-            let v = pair.into_inner();
+            let v: &Pairs<'_, Rule> = &pair.into_inner();
             match MdParser::parse_syntax_tree(v, global_variables, local_variables) {
                 Some(parsed) => output_string.push_str(&parsed),
                 None => return None,

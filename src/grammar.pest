@@ -1,25 +1,24 @@
 WHITESPACE = _{ (" " | "\t" | "\n" | "\r") }
-// WHITESPACE = _{ (" " | "\t") }
 
 
 TRUE = { "True" }
 FALSE = { "False" }
 
-FOR = { "for" }
+FOR = _{ "for" }
 ENDFOR = { "endfor" }
-IF = { "if" }
-ELSE = { "else" }
+IF = _{ "if" }
+ELSE = _{ "else" }
 ENDIF = { "endif" }
-LIST_OPEN = { "[" }
-LIST_CLOSE = { "]" }
+LIST_OPEN = _{ "[" }
+LIST_CLOSE = _{ "]" }
 END_EXPRESSION = { ";;" }
-BLOC_OPEN = { "{{" }
-BLOC_CLOSE = { "}}" }
-ITER_KEYWORD = { "in" }
-DO = { "do" }
+BLOC_OPEN = _{ "{{" }
+BLOC_CLOSE = _{ "}}" }
+ITER_KEYWORD = _{ "in" }
+DO = _{ "do" }
 
 // Operators
-ASSIGNMENT_OPERATOR = { ":=" }
+ASSIGNMENT_OPERATOR = _{ ":=" }
 
 escape_char = { ("\\" ~ ("\'" | "\\" | "n" | "t" | "r" | "0" | "x" | "u" ~ ASCII_DIGIT* | ASCII_DIGIT{3})) }
 simple_string = { (!"'" ~ ANY) }

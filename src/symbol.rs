@@ -40,6 +40,18 @@ impl ToString for Symbol {
     }
 }
 
+impl Clone for Symbol {
+    fn clone(&self) -> Self {
+        match self {
+            Self::String(arg0) => Self::String(arg0.clone()),
+            Self::Integer(arg0) => Self::Integer(arg0.clone()),
+            Self::Boolean(arg0) => Self::Boolean(arg0.clone()),
+            Self::Struct(arg0) => Self::Struct(arg0.clone()),
+            Self::List(arg0) => Self::List(arg0.clone()),
+        }
+    }
+}
+
 pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
     if var_value.starts_with('\'') {
         let final_string: &str = var_value.trim_matches('\'');
