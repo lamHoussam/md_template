@@ -53,6 +53,7 @@ impl Clone for Symbol {
 }
 
 pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
+    println!("Var_value: {}", var_value);
     if var_value.starts_with('\'') {
         let final_string: &str = var_value.trim_matches('\'');
         return Symbol::String(final_string.to_string());
@@ -61,8 +62,9 @@ pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
         let string_values: Vec<&str> = var_value.split(",").collect();
         
         for ele in string_values {
-            let v: String = ele.replace("[", "").replace("]", "").trim().to_string();
 
+            // TODO: ele[1::-2]
+            let v: String = ele.replace("[", "").replace("]", "").trim().to_string();
             // println!("v: {}", v);
             if !v.is_empty() {
                 let s: Symbol = get_symbol_from_variable_value(v);
@@ -70,9 +72,9 @@ pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
             }
         }
         return Symbol::List(list);
-    } else if var_value.eq("True") {
+    } else if var_value.trim().eq("True") {
         return Symbol::Boolean(true);
-    } else if var_value.eq("False") {
+    } else if var_value.trim().eq("False") {
         return Symbol::Boolean(false);
     } else {
         return Symbol::Integer(var_value.parse().unwrap());

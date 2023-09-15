@@ -1,6 +1,8 @@
 use std::collections::HashMap;
-use pest::iterators::{Pairs, Pair};
+use pest::{iterators::{Pairs, Pair}, error::Error};
 use crate::{Symbol, get_symbol_from_variable_value};
+
+use std::result::Result;
 
 
 
@@ -10,7 +12,7 @@ pub struct MdParser;
 
 impl MdParser {
 
-    pub fn parse_for_statement(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
+    pub fn parse_for_statement(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> Result<String, &'static str> {
         let mut final_string: String = String::new();
         let iter: Pair<'_, Rule> = node;
         let mut cloned_lst: Vec<Symbol>;
@@ -85,11 +87,11 @@ impl MdParser {
                         
                         
                         match MdParser::parse_syntax_tree(node, global_variables, local_variables) {
-                            Some(output) => {
+                            Ok(output) => {
                                 final_string.push_str(&output);
                                 println!("{}", output);
                             } 
-                            None => todo!(),
+                            Err(e) => return Err(e),
                         }
 
                     }
@@ -105,7 +107,7 @@ impl MdParser {
 
         local_variables.remove(&iter_var_name);
         println!("Final: {}", final_string);
-        return final_string;
+        return Ok(final_string);
     }
 
     pub fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
@@ -155,27 +157,26 @@ impl MdParser {
     }
     
     pub fn parse_syntax_tree(node: &Pairs<'_, Rule, >, global_variables: &mut HashMap<String, Symbol>, 
-    local_variables: &mut HashMap<String, Symbol>) -> Option<String> {
+    local_variables: &mut HashMap<String, Symbol>) -> Result<String, &'static str> {
         let iter: Pairs<'_, Rule> = node.clone();
         let mut output_string: String = String::new();
-    
+
         for pair in iter {
             match pair.as_rule() {
                 Rule::assignment_expression => {
                     let assignment_exp: &str = pair.as_str();
                     let vars: Vec<&str> = assignment_exp.split(":=").collect();
                     if vars.len() != 2 {
-                        println!("Error in variable declaration");
-                        return None;
+                        return Err("Error in variable declaration");
                     }
-    
+
                     let var_name: String = String::from(vars[0].trim());
                     let var_value: String = String::from(vars[1].trim());
-    
+
                     println!("Variable: {:?}, Value: {:?}", var_name, var_value);
-                    
+
                     let symb: Symbol = get_symbol_from_variable_value(var_value);
-    
+
                     global_variables.insert(var_name, symb);
                 }
                 Rule::print_statement => {
@@ -197,26 +198,127 @@ impl MdParser {
                     output_string.push_str(pair.as_str());
                 }
                 Rule::for_statement => {
-                    let output = MdParser::parse_for_statement(pair.clone(), global_variables, local_variables);
+                    let output = match MdParser::parse_for_statement(pair.clone(), global_variables, local_variables) {
+                        Ok(val) => val,
+                        Err(e) => return Err(e),
+                    }; 
                     println!("Foor output: {}", output);
                     
                     output_string.push_str(&output);
+                }
+                Rule::if_statement => {
+                    let output = match MdParser::parse_if_statement(pair.clone(), global_variables, local_variables) {
+                        Ok(val) => val,
+                        Err(e) => return Err(e),
+                    }; 
+                    
+                    output_string.push_str(&output);
+
                 }
                 _default => {
 
                 }
             }
 
-            if pair.as_rule() != Rule::for_statement {
+            if pair.as_rule() != Rule::for_statement && pair.as_rule() != Rule::if_statement {
                 let v: &Pairs<'_, Rule> = &pair.into_inner();
                 match MdParser::parse_syntax_tree(v, global_variables, local_variables) {
-                    Some(parsed) => output_string.push_str(&parsed),
-                    None => return None,
+                    Ok(parsed) => output_string.push_str(&parsed),
+                    Err(e) => return Err(e),
                 }
             }
     
         }
-        return Some(output_string);
+        return Ok(output_string);
+    }
+    
+    fn evaluate_boolean_expr(node: Pair<'_, Rule>) -> bool {
+        let mut final_value: bool = false;
+        for pair in node.into_inner() {
+            match pair.as_rule() {
+                Rule::and_expr => {
+                    let mut val: bool = true;
+
+                    for bool_term_pair in pair.into_inner() {
+                        val &= Self::evaluate_boolean_expr(bool_term_pair);
+                        if !val {
+                            break;
+                        }
+                    }
+
+                    final_value = val;
+                },
+                
+                Rule::or_expr => {
+                    let mut val: bool = false;
+
+                    for bool_term_pair in pair.into_inner() {
+                        val |= Self::evaluate_boolean_expr(bool_term_pair);
+                        if val {
+                            break;
+                        }
+                    }
+
+                    final_value = val;
+                },
+
+                Rule::not_expr => {
+                    let mut val: bool = true;
+                    let mut num_not: i32 = 0;
+                    // println!("Test: {:#?}", pair.into_inner());
+                    for bool_term_pair in pair.into_inner() {
+                        match bool_term_pair.as_rule() {
+                            Rule::NOT => {
+                                num_not += 1;
+                            }, 
+                            Rule::atom => {
+                                val = Self::evaluate_boolean_expr(bool_term_pair);
+                            }, 
+                            _ => {}
+                        }
+                    }
+                    final_value = (num_not % 2) == if val { 0 } else { 1 };
+                },
+
+                _ => {
+
+                }
+            }
+        }
+
+        return final_value;
+    }
+
+    pub fn parse_if_statement(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> Result<String, &'static str> {
+        let mut final_string: String = String::new();
+        let mut condition_evaluation: bool = false;
+        for pair in node.into_inner() {
+            // println!("Rule: {:?}", pair.as_rule());
+            match pair.as_rule() {
+                Rule::boolean_expr => {
+                    println!("Bool expr: {}", pair.as_str());
+                    condition_evaluation = Self::evaluate_boolean_expr(pair);
+                },
+                Rule::expression_list => {
+                    if condition_evaluation {
+                        println!("expr list: {}, cond: {}", pair.as_str(), condition_evaluation);
+                        match MdParser::parse_syntax_tree(&pair.into_inner(), global_variables, local_variables) {
+                            Ok(output) => {
+                                final_string.push_str(&output);
+                                // println!("{}", output);
+                            } 
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
+                
+                _ => {
+
+                }
+            }
+        }
+
+        return Ok(final_string);
     }
 
 }

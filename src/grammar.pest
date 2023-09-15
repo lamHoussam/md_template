@@ -1,5 +1,6 @@
 WHITESPACE = _{ (" " | "\t" | "\n" | "\r") }
 
+// Keywords
 
 TRUE = { "True" }
 FALSE = { "False" }
@@ -16,6 +17,11 @@ BLOC_OPEN = _{ "{{" }
 BLOC_CLOSE = _{ "}}" }
 ITER_KEYWORD = _{ "in" }
 DO = _{ "do" }
+
+OR  = _{ "or" }
+AND = _{ "and" }
+NOT = { "not" }
+
 
 // Operators
 ASSIGNMENT_OPERATOR = _{ ":=" }
@@ -43,7 +49,7 @@ expression = {
     | (assignment_expression ~ END_EXPRESSION) 
 }
 
-if_statement = { IF ~ variable_value ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF }
+if_statement = { IF ~ boolean_expr ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF }
 
 for_statement = { 
     FOR ~ variable ~ ITER_KEYWORD ~ variable_value ~ DO ~ expression_list ~ ENDFOR |
@@ -70,7 +76,7 @@ string_expression = { non_composite_string_part ~ ("." ~ string_expression)? }
 
 // Assignment
 assignment_expression = { variable ~ ASSIGNMENT_OPERATOR ~ assignment_values }
-assignment_values = { variable_value | string | integer | boolean | list_litteral }
+assignment_values = { variable_value | string | integer | boolean_literal | list_litteral }
 
 txt = @{ (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
 
@@ -78,4 +84,12 @@ variable = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
 integer = { (ASCII_DIGIT)+ }
 
-boolean = { TRUE | FALSE }
+
+// Conditions
+boolean_literal = { TRUE | FALSE }
+
+boolean_expr = { and_expr }
+and_expr = { or_expr ~ (AND ~ or_expr)* }
+or_expr = { not_expr ~ (OR ~ not_expr)* }
+not_expr = { NOT? ~ atom }
+atom = { "(" ~ boolean_expr ~ ")" | boolean_literal }

@@ -30,7 +30,10 @@ fn main() {
 
     match MdParser::parse(Rule::start, &data_file) {
         Ok(parsed) => {
-            MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables);
+            match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
+                Ok(_) => {},
+                Err(e) => eprintln!("Error while parsing: {:?}", e),
+            };
         }
         Err(e) => eprintln!("Error while parsing: {:?}", e),
     }
@@ -41,13 +44,13 @@ fn main() {
     match MdParser::parse(Rule::start, &sample_file) {
         Ok(parsed) => {
             match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
-                Some(output) => {
+                Ok(output) => {
                     match output_file.write_all(output.as_bytes()) {
                         Ok(_) => {},
                         Err(_) => panic!("Couldn't write to output file"),
                     }
                 },
-                None => panic!("Couldn't generate output string"),
+                Err(e) => panic!("Couldn't generate output string {e:?}"),
             }
         }
         Err(e) => eprintln!("Error while parsing: {:?}", e),
