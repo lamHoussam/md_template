@@ -234,58 +234,74 @@ impl MdParser {
     
     fn evaluate_boolean_expr(node: Pair<'_, Rule>) -> bool {
         let mut final_value: bool = false;
-        for pair in node.into_inner() {
-            match pair.as_rule() {
-                Rule::and_expr => {
-                    let mut val: bool = true;
-
-                    for bool_term_pair in pair.into_inner() {
-                        val &= Self::evaluate_boolean_expr(bool_term_pair);
-                        if !val {
-                            break;
-                        }
-                    }
-
-                    final_value = val;
-                },
-                
-                Rule::or_expr => {
-                    let mut val: bool = false;
-
-                    for bool_term_pair in pair.into_inner() {
-                        val |= Self::evaluate_boolean_expr(bool_term_pair);
-                        if val {
-                            break;
-                        }
-                    }
-
-                    final_value = val;
-                },
-
-                Rule::not_expr => {
-                    let mut val: bool = true;
-                    let mut num_not: i32 = 0;
-                    // println!("Test: {:#?}", pair.into_inner());
-                    for bool_term_pair in pair.into_inner() {
-                        match bool_term_pair.as_rule() {
-                            Rule::NOT => {
-                                num_not += 1;
-                            }, 
-                            Rule::atom => {
-                                val = Self::evaluate_boolean_expr(bool_term_pair);
-                            }, 
-                            _ => {}
-                        }
-                    }
-                    final_value = (num_not % 2) == if val { 0 } else { 1 };
-                },
-
-                _ => {
-
+        // println!("Node: {:#?}", node.into_inner());
+        match node.as_rule() {
+            Rule::boolean_expr => {
+                match node.into_inner().peek() {
+                    Some(pair) => {
+                        return Self::evaluate_boolean_expr(pair);
+                    },
+                    None => return false,
                 }
+            },
+            Rule::and_expr => {
+                let mut val: bool = true;
+                for p in node.into_inner() {
+                    val &= Self::evaluate_boolean_expr(p);
+                    if !val { return false; }
+                }
+
+                return val;
+            },
+            Rule::or_expr => {
+                let mut val: bool = false;
+                // println!("OR Inner: {:#?}", node.into_inner());
+                for p in node.into_inner() {
+                    val |= Self::evaluate_boolean_expr(p);
+                    if val { return true; }
+                }
+
+                return val;
+            },
+            Rule::not_expr => {
+                let mut val: bool = true;
+                let mut num_not: i32 = 0;
+                for bool_term_pair in node.into_inner() {
+                    match bool_term_pair.as_rule() {
+                        Rule::NOT => {
+                            num_not += 1;
+                        }, 
+                        Rule::boolean_atom => {
+                            val = Self::evaluate_boolean_expr(bool_term_pair);
+                        }, 
+                        _ => {}
+                    }
+                }
+                return (num_not % 2) == if val { 0 } else { 1 };
+            },
+            Rule::boolean_atom => {
+                match node.into_inner().peek() {
+                    Some(pair) => {
+                        return Self::evaluate_boolean_expr(pair);
+                    },
+                    None => return false,
+                }
+            },
+            Rule::boolean_literal => {
+                match node.into_inner().peek() {
+                    Some(pair) => {
+                        let val = pair.as_str().to_string();
+                        let symb = get_symbol_from_variable_value(val);
+
+                        return if let Symbol::Boolean(v) = symb { v } else { false }
+                    },
+                    None => return false,
+                }
+            },
+            _ => {
+                println!("Other: {:?}", node.as_rule());
             }
         }
-
         return final_value;
     }
 
@@ -298,6 +314,7 @@ impl MdParser {
                 Rule::boolean_expr => {
                     println!("Bool expr: {}", pair.as_str());
                     condition_evaluation = Self::evaluate_boolean_expr(pair);
+                    println!("Evaluated to: {}\n", condition_evaluation);
                 },
                 Rule::expression_list => {
                     if condition_evaluation {

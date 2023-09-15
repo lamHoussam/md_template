@@ -91,5 +91,5 @@ boolean_literal = { TRUE | FALSE }
 boolean_expr = { and_expr }
 and_expr = { or_expr ~ (AND ~ or_expr)* }
 or_expr = { not_expr ~ (OR ~ not_expr)* }
-not_expr = { NOT? ~ atom }
-atom = { "(" ~ boolean_expr ~ ")" | boolean_literal }
+not_expr = { NOT? ~ boolean_atom }
+boolean_atom = { "(" ~ boolean_expr ~ ")" | boolean_literal }

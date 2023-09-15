@@ -53,7 +53,6 @@ impl Clone for Symbol {
 }
 
 pub fn get_symbol_from_variable_value(var_value: String) -> Symbol {
-    println!("Var_value: {}", var_value);
     if var_value.starts_with('\'') {
         let final_string: &str = var_value.trim_matches('\'');
         return Symbol::String(final_string.to_string());
