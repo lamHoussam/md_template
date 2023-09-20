@@ -40,10 +40,12 @@ impl MdParser {
                             value_iterator_option = None;
                             if let Some(value) = local_variables.get(&iterable_name.to_string()).cloned() {
                                 match value {
-                                    Symbol::String(_) => todo!(),
-                                    Symbol::Integer(_) => todo!(),
-                                    Symbol::Boolean(_) => todo!(),
-                                    Symbol::Struct(_) => todo!(),
+                                    Symbol::String(_) => {
+                                        return Err("String is not iterable (Maybe later)")
+                                    },
+                                    Symbol::Integer(_) => return Err("Integer Not iterable"),
+                                    Symbol::Boolean(_) => return Err("Boolean Not iterable"),
+                                    Symbol::Struct(_) => return Err("Struct Not iterable"),
                                     Symbol::List(lst) => {
                                         cloned_lst = lst.clone();
                                         value_iterator_option = Some(cloned_lst.iter());
@@ -51,15 +53,19 @@ impl MdParser {
                                 }
                             } else if let Some(value) = global_variables.get_mut(&iterable_name.to_string()).cloned() {
                                 match value {
-                                    Symbol::String(_) => todo!(),
-                                    Symbol::Integer(_) => todo!(),
-                                    Symbol::Boolean(_) => todo!(),
-                                    Symbol::Struct(_) => todo!(),
+                                    Symbol::String(_) => {
+                                        return Err("String is not iterable (Maybe later)")
+                                    },
+                                    Symbol::Integer(_) => return Err("Integer Not iterable"),
+                                    Symbol::Boolean(_) => return Err("Boolean Not iterable"),
+                                    Symbol::Struct(_) => return Err("Struct Not iterable"),
                                     Symbol::List(lst) => {
                                         cloned_lst = lst.clone();
                                         value_iterator_option = Some(cloned_lst.iter());
                                     },
                                 }
+                            } else {
+                                return Err("Couldn't find variable");
                             }
 
                         } ,

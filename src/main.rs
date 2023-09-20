@@ -1,5 +1,4 @@
 use pest::Parser as PestParser;
-use pest_derive::Parser;
 
 pub mod symbol;
 pub mod md_parser;
@@ -9,7 +8,6 @@ use core::panic;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
-use std::string;
 
 use clap::Parser as ClapParser;
 
