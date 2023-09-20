@@ -1,4 +1,6 @@
-use pest::Parser;
+use pest::Parser as PestParser;
+use pest_derive::Parser;
+
 pub mod symbol;
 pub mod md_parser;
 
@@ -7,13 +9,36 @@ use core::panic;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
+use std::string;
+
+use clap::Parser as ClapParser;
 
 pub use symbol::{Symbol, get_symbol_from_variable_value};
 
+#[derive(ClapParser, Debug)]
+#[command()]
+struct Args {
+    /// Name of the person to greet
+    #[arg(short, long)]
+    data: String,
+
+    #[arg(short, long)]
+    sample: String,
+
+    #[arg(short, long)]
+    output: String,
+}
+
+
 fn main() {
-    let data_file_path: &str = "data/data.txt";
-    let sample_file_path: &str = "test/sample1.md";
-    let output_file_path: &str = "output/file1.md";
+    
+    let args = Args::parse();
+    
+    println!("Data: {}, Sample: {}, Output: {}", args.data, args.sample, args.output);
+    
+    let data_file_path: &str = args.data.as_str();
+    let sample_file_path: &str = args.sample.as_str();
+    let output_file_path: &str = args.output.as_str();
 
     let data_file: String = fs::read_to_string(data_file_path).expect("Failed to read data file");
     let sample_file: String = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");

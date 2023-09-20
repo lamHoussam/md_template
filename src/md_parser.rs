@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use pest::{iterators::{Pairs, Pair}, error::Error};
+use pest::iterators::{Pairs, Pair};
 use crate::{Symbol, get_symbol_from_variable_value};
 
 use std::result::Result;
@@ -233,8 +233,6 @@ impl MdParser {
     }
     
     fn evaluate_boolean_expr(node: Pair<'_, Rule>) -> bool {
-        let mut final_value: bool = false;
-        // println!("Node: {:#?}", node.into_inner());
         match node.as_rule() {
             Rule::boolean_expr => {
                 match node.into_inner().peek() {
@@ -302,7 +300,7 @@ impl MdParser {
                 println!("Other: {:?}", node.as_rule());
             }
         }
-        return final_value;
+        return false;
     }
 
     pub fn parse_if_statement(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> Result<String, &'static str> {
