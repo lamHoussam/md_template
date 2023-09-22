@@ -76,7 +76,7 @@ string_expression = { non_composite_string_part ~ ("." ~ string_expression)? }
 
 // Assignment
 assignment_expression = { variable ~ ASSIGNMENT_OPERATOR ~ assignment_values }
-assignment_values = { variable_value | string | integer | boolean_literal | list_litteral }
+assignment_values = { variable_value | string | integer | boolean_expr | list_litteral }
 
 txt = @{ (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
 
