@@ -19,10 +19,10 @@ struct Args {
     /// Data file path for global variables
     #[arg(short, long)]
     data: Option<String>,
-    // Sample markdown file
+    /// Sample markdown file
     #[arg(short, long)]
     sample: String,
-    // Output markdown file
+    /// Output markdown file
     #[arg(short, long)]
     output: String,
 }
