@@ -118,7 +118,7 @@ impl MdParser {
     pub fn parse_string_expression(node: Pair<'_, Rule>, global_variables: &mut HashMap<String, Symbol>, local_variables: &mut HashMap<String, Symbol>) -> String {
         let mut final_string: String = String::new();
         match node.as_rule() {
-            Rule::variable_interior => {
+            Rule::variable => {
                 let null_string: &Symbol = &Symbol::String(String::from("null"));
                 let key: String = String::from(node.as_str());
                 let var_value: &Symbol;
@@ -320,6 +320,22 @@ impl MdParser {
                     // println!("Bool expr: {}", pair.as_str());
                     condition_evaluation = Self::evaluate_boolean_expr(pair);
                     // println!("Evaluated to: {}\n", condition_evaluation);
+                },
+                Rule::variable_value => {
+                    let var_name = pair.as_str().replace("$(", "").replace(")", "");
+                    if let Some(value) = local_variables.get(&var_name) {
+                        match value {
+                            Symbol::Boolean(bool_val) => condition_evaluation = *bool_val,
+                            _ => return Err("Variable needs to be boolean"),
+                        }
+                    } else if let Some(value) = global_variables.get(&var_name) {
+                        match value {
+                            Symbol::Boolean(bool_val) => condition_evaluation = *bool_val,
+                            _ => return Err("Variable needs to be boolean"),
+                        }
+                    } else {
+                        return Err("Couldn't find variable");
+                    }
                 },
                 Rule::expression_list => {
                     println!("Reached");

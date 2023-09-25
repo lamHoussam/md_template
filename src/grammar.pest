@@ -49,7 +49,9 @@ expression = {
     | (assignment_expression ~ END_EXPRESSION) 
 }
 
-if_statement = { IF ~ boolean_expr ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF }
+if_statement = { 
+    IF ~ (boolean_expr | variable_value) ~ DO ~ expression_list ~ (ELSE ~ expression_list)? ~ ENDIF 
+}
 
 for_statement = { 
     FOR ~ variable ~ ITER_KEYWORD ~ variable_value ~ DO ~ expression_list ~ ENDFOR |
@@ -58,9 +60,7 @@ for_statement = {
 
 print_statement = { "print" ~ string_expression }
 
-variable_value = { "$(" ~ variable_interior ~ ")" }
-
-variable_interior = { variable ~ ("." ~ variable_interior)? }
+variable_value = { "$(" ~ variable ~ ")" }
 
 list_litteral = { LIST_OPEN ~ list_interior ~ LIST_CLOSE }
 
