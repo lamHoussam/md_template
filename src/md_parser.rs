@@ -21,19 +21,19 @@ impl MdParser {
         let mut iter_var_name: String = String::new();
 
         for pair in iter.into_inner() {
-            println!("Rule: {:?}", pair.as_rule());
+            // println!("Rule: {:?}", pair.as_rule());
             match pair.as_rule() {
                 Rule::variable => {
                     iter_var_name = pair.as_str().to_string();
-                    println!("Variable: {}", iter_var_name);
+                    // println!("Variable: {}", iter_var_name);
                 }
                 Rule::variable_value => {
-                    println!("Value: {}", pair.as_str());
+                    // println!("Value: {}", pair.as_str());
                     match pair.into_inner().peek() {
                         Some(iterable_name_pair) => {
                             
                             let iterable_name: &str = iterable_name_pair.as_str();
-                            println!("iterable name: {}", iterable_name);
+                            // println!("iterable name: {}", iterable_name);
 
 
                             // TODO: Refactor
@@ -94,7 +94,7 @@ impl MdParser {
                         match MdParser::parse_syntax_tree(node, global_variables, local_variables) {
                             Ok(output) => {
                                 final_string.push_str(&output);
-                                println!("{}", output);
+                                // println!("{}", output);
                             } 
                             Err(e) => return Err(e),
                         }
@@ -111,7 +111,7 @@ impl MdParser {
         }
 
         local_variables.remove(&iter_var_name);
-        println!("Final: {}", final_string);
+        // println!("Final: {}", final_string);
         return Ok(final_string);
     }
 
@@ -178,7 +178,7 @@ impl MdParser {
                     let var_name: String = String::from(vars[0].trim());
                     let var_value: String = String::from(vars[1].trim());
 
-                    println!("Variable: {:?}, Value: {:?}", var_name, var_value);
+                    // println!("Variable: {:?}, Value: {:?}", var_name, var_value);
 
                     let symb: Symbol = get_symbol_from_variable_value(var_value);
 
@@ -189,12 +189,12 @@ impl MdParser {
                     let node: Pairs<'_, Rule> = pair.clone().into_inner();
                     match node.peek() {
                         Some(expression) => {
-                            let printed_expression: String = MdParser::parse_string_expression(expression, global_variables, local_variables);                        
+                            let mut printed_expression: String = MdParser::parse_string_expression(expression, global_variables, local_variables);                        
                             
+                            printed_expression.push('\n');
                             output_string.push_str(&printed_expression);
-                            // println!("{}", printed_expression);
                         },
-                        None => println!("Exmpty"),
+                        None => println!("Empty"),
                     }
                 }
                 Rule::txt => {
@@ -207,7 +207,7 @@ impl MdParser {
                         Ok(val) => val,
                         Err(e) => return Err(e),
                     }; 
-                    println!("Foor output: {}", output);
+                    // println!("Foor output: {}", output);
                     
                     output_string.push_str(&output);
                 }
@@ -302,7 +302,7 @@ impl MdParser {
                 }
             },
             _ => {
-                println!("Other: {:?}", node.as_rule());
+                // println!("Other: {:?}", node.as_rule());
             }
         }
         return false;
@@ -315,13 +315,13 @@ impl MdParser {
             // println!("Rule: {:?}", pair.as_rule());
             match pair.as_rule() {
                 Rule::boolean_expr => {
-                    println!("Bool expr: {}", pair.as_str());
+                    // println!("Bool expr: {}", pair.as_str());
                     condition_evaluation = Self::evaluate_boolean_expr(pair);
-                    println!("Evaluated to: {}\n", condition_evaluation);
+                    // println!("Evaluated to: {}\n", condition_evaluation);
                 },
                 Rule::expression_list => {
                     if condition_evaluation {
-                        println!("expr list: {}, cond: {}", pair.as_str(), condition_evaluation);
+                        // println!("expr list: {}, cond: {}", pair.as_str(), condition_evaluation);
                         match MdParser::parse_syntax_tree(&pair.into_inner(), global_variables, local_variables) {
                             Ok(output) => {
                                 final_string.push_str(&output);
