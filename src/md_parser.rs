@@ -37,7 +37,6 @@ impl MdParser {
 
 
                             // TODO: Refactor
-                            value_iterator_option = None;
                             if let Some(value) = local_variables.get(&iterable_name.to_string()).cloned() {
                                 match value {
                                     Symbol::String(_) => {

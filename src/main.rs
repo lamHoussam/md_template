@@ -49,7 +49,7 @@ fn main() {
     let mut global_variables: HashMap<String, Symbol> = HashMap::new();
     let mut local_variables: HashMap<String, Symbol> = HashMap::new();
 
-    println!("Data file: ");
+    // println!("Data file: ");
 
     match MdParser::parse(Rule::start, &data_file) {
         Ok(parsed) => {
@@ -61,11 +61,12 @@ fn main() {
         Err(e) => eprintln!("Error while parsing: {:?}", e),
     }
 
-    println!("Variables: {:#?}", global_variables);
+    // println!("Variables: {:#?}", global_variables);
 
-    println!("Sample file: ");
+    // println!("Sample file: ");
     match MdParser::parse(Rule::start, &sample_file) {
         Ok(parsed) => {
+            println!("Output {:#?}", parsed);
             match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
                 Ok(output) => {
                     match output_file.write_all(output.as_bytes()) {
