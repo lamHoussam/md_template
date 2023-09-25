@@ -43,15 +43,15 @@ fn main() {
         Ok(file) => file,
         Err(_) => panic!("Couldn't create output file"),
     };
-    
+
     let mut global_variables: HashMap<String, Symbol> = HashMap::new();
     let mut local_variables: HashMap<String, Symbol> = HashMap::new();
-    
+
     // println!("Data file: ");
     match args.data {
         Some(data_file_path) => {
             let data_file: String = fs::read_to_string(data_file_path).expect("Failed to read data file");
-        
+
             match MdParser::parse(Rule::start, &data_file) {
                 Ok(parsed) => {
                     match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {

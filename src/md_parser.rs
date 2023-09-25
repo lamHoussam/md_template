@@ -167,6 +167,7 @@ impl MdParser {
         let mut output_string: String = String::new();
 
         for pair in iter {
+            println!("Rule: {:#?}", pair.as_rule());
             match pair.as_rule() {
                 Rule::assignment_expression => {
                     let assignment_exp: &str = pair.as_str();
@@ -212,6 +213,7 @@ impl MdParser {
                     output_string.push_str(&output);
                 }
                 Rule::if_statement => {
+                    println!("If st");
                     let output = match MdParser::parse_if_statement(pair.clone(), global_variables, local_variables) {
                         Ok(val) => val,
                         Err(e) => return Err(e),
@@ -320,18 +322,21 @@ impl MdParser {
                     // println!("Evaluated to: {}\n", condition_evaluation);
                 },
                 Rule::expression_list => {
+                    println!("Reached");
                     if condition_evaluation {
                         // println!("expr list: {}, cond: {}", pair.as_str(), condition_evaluation);
                         match MdParser::parse_syntax_tree(&pair.into_inner(), global_variables, local_variables) {
                             Ok(output) => {
                                 final_string.push_str(&output);
-                                // println!("{}", output);
+                                println!("Expressio : {}", output);
                             } 
                             Err(e) => return Err(e),
                         }
                     }
-                }
-                
+                }, 
+                Rule::ELSE => {
+                    condition_evaluation = !condition_evaluation;
+                },
                 _ => {
 
                 }
