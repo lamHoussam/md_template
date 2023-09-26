@@ -54,8 +54,7 @@ if_statement = {
 }
 
 for_statement = { 
-    FOR ~ variable ~ ITER_KEYWORD ~ variable_value ~ DO ~ expression_list ~ ENDFOR |
-    FOR ~ variable ~ ITER_KEYWORD ~ list_litteral ~ DO ~ expression_list ~ ENDFOR 
+    FOR ~ variable ~ ITER_KEYWORD ~ (variable_value | list_litteral) ~ DO ~ expression_list ~ ENDFOR
 }
 
 print_statement = { "print" ~ string_expression }
