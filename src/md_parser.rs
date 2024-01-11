@@ -25,13 +25,12 @@ impl MdParser {
             match pair.as_rule() {
                 Rule::variable => {
                     iter_var_name = pair.as_str().to_string();
-                    // println!("Variable: {}", iter_var_name);
+                    println!("Variable: {}", iter_var_name);
                 }
                 Rule::variable_value => {
                     // println!("Value: {}", pair.as_str());
                     match pair.into_inner().peek() {
                         Some(iterable_name_pair) => {
-                            
                             let iterable_name: &str = iterable_name_pair.as_str();
                             // println!("iterable name: {}", iterable_name);
 
@@ -44,7 +43,7 @@ impl MdParser {
                                     },
                                     Symbol::Integer(_) => return Err("Integer Not iterable"),
                                     Symbol::Boolean(_) => return Err("Boolean Not iterable"),
-                                    Symbol::Struct(_) => return Err("Struct Not iterable"),
+                                    Symbol::Struct(_)  => return Err("Struct Not iterable" ),
                                     Symbol::List(lst) => {
                                         cloned_lst = lst.clone();
                                         value_iterator_option = Some(cloned_lst.iter());
@@ -55,13 +54,13 @@ impl MdParser {
                                     Symbol::String(_) => {
                                         return Err("String is not iterable (Maybe later)")
                                     },
-                                    Symbol::Integer(_) => return Err("Integer Not iterable"),
-                                    Symbol::Boolean(_) => return Err("Boolean Not iterable"),
-                                    Symbol::Struct(_) => return Err("Struct Not iterable"),
                                     Symbol::List(lst) => {
                                         cloned_lst = lst.clone();
                                         value_iterator_option = Some(cloned_lst.iter());
                                     },
+                                    Symbol::Integer(_) => return Err("Integer Not iterable"),
+                                    Symbol::Boolean(_) => return Err("Boolean Not iterable"),
+                                    Symbol::Struct(_)  => return Err("Struct Not iterable" ),
                                 }
                             } else {
                                 return Err("Couldn't find variable");
@@ -73,9 +72,6 @@ impl MdParser {
 
                 },
                 Rule::list_litteral => {
-                    // println!("Found list litteral: {}", pair.as_str());
-                    // return Err("No list litteral");
-
                     let lst = get_symbol_from_variable_value(pair.as_str().to_string());
                     if let Symbol::List(value) = lst {
                         cloned_lst = value.clone();
@@ -151,15 +147,16 @@ impl MdParser {
             Rule::string => {
                 let mut added_str: String = String::from(node.as_str().to_string());
     
-                added_str = added_str.replace(r#"\'"#, "\'")
+                // TODO: Refactor
+                
+                // println!("Node {:?}", added_str);
+                added_str = added_str[1..(added_str.len() - 1)].to_string();
+                added_str = added_str.replace(r#"'"#, "\'")
                                     .replace(r#"\\"#, "\\")
                                     .replace(r#"\n"#, "\n")
                                     .replace(r#"\t"#, "\t")
                                     .replace(r#"\r"#, "\r")
                                     .replace(r#"\0"#, "\0");
-    
-                // println!("Node {:?}", added_str);
-                added_str = added_str[1..(added_str.len() - 1)].to_string();
     
                 final_string.push_str(&added_str);
             }
@@ -178,9 +175,8 @@ impl MdParser {
     local_variables: &mut HashMap<String, Symbol>) -> Result<String, &'static str> {
         let iter: Pairs<'_, Rule> = node.clone();
         let mut output_string: String = String::new();
-
         for pair in iter {
-            // println!("Rule: {:#?}", pair.as_rule());
+            // println!("Rule: {:#?}, str: {:?}", pair.as_rule(), pair.as_str());
             match pair.as_rule() {
                 Rule::assignment_expression => {
                     let assignment_exp: &str = pair.as_str();

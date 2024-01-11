@@ -67,7 +67,7 @@ fn main() {
 
     match MdParser::parse(Rule::start, &sample_file) {
         Ok(parsed) => {
-            // println!("Output {:#?}", parsed);
+            println!("Output {:#?}", parsed);
             match MdParser::parse_syntax_tree(&parsed, &mut global_variables, &mut local_variables) {
                 Ok(output) => {
                     match output_file.write_all(output.as_bytes()) {

@@ -1,32 +1,33 @@
-WHITESPACE = _{ (" " | "\t" | "\n" | "\r") }
+WHITESPACE = _{ (" " | "\t" | "\n" | "\r" | "\r\n") }
+// WHITESPACE = _{ WHITE_SPACE }
 
 // Keywords
 
 TRUE = { "True" }
 FALSE = { "False" }
 
-FOR = _{ "for" }
+FOR = { "for" }
 ENDFOR = { "endfor" }
-IF = _{ "if" }
+IF = { "if" }
 ELSE = { "else" }
 ENDIF = { "endif" }
-LIST_OPEN = _{ "[" }
-LIST_CLOSE = _{ "]" }
-END_EXPRESSION = _{ ";;" }
-BLOC_OPEN = _{ "{{" }
-BLOC_CLOSE = _{ "}}" }
-ITER_KEYWORD = _{ "in" }
-DO = _{ "do" }
+LIST_OPEN = { "[" }
+LIST_CLOSE = { "]" }
+END_EXPRESSION = { ";;" }
+BLOC_OPEN = { WHITESPACE* ~ "{{" }
+BLOC_CLOSE = { "}}" ~ WHITESPACE* }
+ITER_KEYWORD = { "in" }
+DO = { "do" }
 
-OR  = _{ "or" }
-AND = _{ "and" }
+OR  = { "or" }
+AND = { "and" }
 NOT = { "not" }
 
 
 // Operators
-ASSIGNMENT_OPERATOR = _{ ":=" }
+ASSIGNMENT_OPERATOR = { ":=" }
 
-escape_char = { ("\\" ~ ("\'" | "\\" | "n" | "t" | "r" | "0" | "x" | "u" ~ ASCII_DIGIT* | ASCII_DIGIT{3})) }
+escape_char = { ("\\" ~ ("'" | "\\" | "n" | "t" | "r" | "0" | "x" | "u" ~ ASCII_DIGIT* | ASCII_DIGIT{3})) }
 simple_string = { (!"'" ~ ANY) }
 
 string = {
@@ -35,12 +36,16 @@ string = {
 
 start = { program }
 
+// program = { (bloc | txt)* }
+// program = { (bloc | txt) ~ program? }
 program = { (txt ~ program?) | (bloc ~ program?) }
 
 
 bloc = { BLOC_OPEN ~ expression_list ~ BLOC_CLOSE }
 
+// expression_list = { expression* }
 expression_list = { (expression ~ (expression_list)?)? }
+
 
 expression = { 
     if_statement 
@@ -77,7 +82,10 @@ string_expression = { non_composite_string_part ~ ("." ~ string_expression)? }
 assignment_expression = { variable ~ ASSIGNMENT_OPERATOR ~ assignment_values }
 assignment_values = { variable_value | string | integer | boolean_expr | list_litteral }
 
-txt = @{ (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
+txt = { (!BLOC_OPEN ~ !BLOC_CLOSE ~ ANY)+ }
+// txt = { (!(BLOC_CLOSE | BLOC_OPEN) ~ ANY)+ }
+// txt = { (ANY)+ }
+
 
 variable = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 
