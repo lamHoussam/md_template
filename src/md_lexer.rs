@@ -7,9 +7,7 @@ pub enum MdTokenType {
     String(String),
     Number(i64),
     Operator(char),
-    CodeStart,
-    CodeEnd,
-    EndStatement,
+    
     If,
     Then,
     Else,
@@ -18,6 +16,13 @@ pub enum MdTokenType {
     Endfor,
     EndOfFile,
     Print,
+    
+    // 2 char Tokens
+    Assign,
+    CodeStart,
+    CodeEnd,
+    EndStatement,
+
     Unknown(char),
 }
 
@@ -119,36 +124,42 @@ impl<'a> MdLexer<'a> {
         res
     }
 
+    fn scan_md_txt(&mut self) -> String {
+        let mut txt = String::new();
+        while let Some(&ch) = self.source_code.peek() {
+            match ch {
+                '{' => {
+                    self.source_code.next();
+                    if let Some(&ch2) = self.source_code.peek() {
+                        if ch2 == '{' {
+                            self.source_code.next();
+                            self.is_code_bloc = true;
+                            return txt;
+                        }
+                    }
+                    
+                    txt.push(ch);
+                }
+                '\n' => {
+                    self.source_code.next();
+                    txt.push(ch);
+                    self.current_pos += 1;
+                }
+                _ => {
+                    self.source_code.next();
+                    txt.push(ch);
+                }
+            }
+        }
+
+        self.is_code_bloc = true;
+        txt
+    }
+
     fn next_token(&mut self) -> MdToken {
         // TODO: Refactor
         if !self.is_code_bloc {
-            let mut txt = String::new();
-            while let Some(&ch) = self.source_code.peek() {
-                match ch {
-                    '{' => {
-                        self.source_code.next();
-                        if let Some(&ch2) = self.source_code.peek() {
-                            if ch2 == '{' {
-                                self.source_code.next();
-                                self.is_code_bloc = true;
-                                return MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt };
-                                // return MdToken { token_type: MdTokenType::CodeStart, line: self.current_pos, lexem: "{{".to_string() };
-                            }
-                        }
-
-                        txt.push(ch);
-                    }
-                    '\n' => {
-                        self.source_code.next();
-                        txt.push(ch);
-                        self.current_pos += 1;
-                    }
-                    _ => {
-                        self.source_code.next();
-                        txt.push(ch);
-                    }
-                }                
-            }
+            let txt = self.scan_md_txt();
             return MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt };
         }
 
@@ -179,17 +190,26 @@ impl<'a> MdLexer<'a> {
                     self.source_code.next();
                     return MdToken { token_type: MdTokenType::Operator(ch), line: self.current_pos, lexem: ch.to_string() };
                 }
-                
+                ':' => {
+                    self.source_code.next();
+                    if let Some(&ch2) = self.source_code.peek() {
+                        if ch2 == '=' {
+                            self.source_code.next();
+                            return MdToken { token_type: MdTokenType::Assign, line: self.current_pos, lexem: ":=".to_string() };
+                        }
+                    }
+                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
+                }
                 '}' => {
                     self.source_code.next();
                     if let Some(&ch2) = self.source_code.peek() {
                         if ch2 == '}' {
                             self.source_code.next();
-                            return MdToken { token_type: MdTokenType::CodeStart, line: self.current_pos, lexem: "{{".to_string() };
+                            self.is_code_bloc = false;
+                            return MdToken { token_type: MdTokenType::CodeEnd, line: self.current_pos, lexem: "}}".to_string() };
                         }
                     }
-
-                    return MdToken { token_type: MdTokenType::CodeEnd, line: self.current_pos, lexem: ch.to_string() };
+                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
                 }
                 ';' => {
                     self.source_code.next();
@@ -209,6 +229,7 @@ impl<'a> MdLexer<'a> {
     pub fn scan_tokens(&mut self) {
         loop {
             let token = self.next_token();
+            println!("{:?}", token);
             if token.token_type == MdTokenType::EndOfFile {
                 break;
             }

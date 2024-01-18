@@ -36,7 +36,8 @@ fn main() {
     let mut scanner = MdLexer::new(&sample_file_content);
 
     scanner.scan_tokens();
-    println!("{:#?}", scanner.tokens);
+    // println!("{:#?}", scanner.tokens);
+
 
     // let mut output_file = match File::create(output_file_path) {
     //     Ok(file) => file,
