@@ -42,10 +42,10 @@ impl<'a> MdLexer<'a> {
     pub fn new(input: &'a str) -> Self {
         let mut kw = HashMap::new();
 
-        kw.insert("if", MdTokenType::If);        
+        kw.insert("if", MdTokenType::If);
         kw.insert("then", MdTokenType::Then);
-        kw.insert("else", MdTokenType::Else);        
-        kw.insert("endif", MdTokenType::Endif);        
+        kw.insert("else", MdTokenType::Else);
+        kw.insert("endif", MdTokenType::Endif);
         kw.insert("for", MdTokenType::For);
         kw.insert("endfor", MdTokenType::Endfor);
         kw.insert("print", MdTokenType::Print);
@@ -103,8 +103,6 @@ impl<'a> MdLexer<'a> {
         number
     }
 
-
-
     // TODO: Add Error Handling
     fn scan_string(&mut self) -> String {
         let mut res: String = String::new();
@@ -122,6 +120,7 @@ impl<'a> MdLexer<'a> {
     }
 
     fn next_token(&mut self) -> MdToken {
+        // TODO: Refactor
         if !self.is_code_bloc {
             let mut txt = String::new();
             while let Some(&ch) = self.source_code.peek() {
@@ -136,9 +135,13 @@ impl<'a> MdLexer<'a> {
                                 // return MdToken { token_type: MdTokenType::CodeStart, line: self.current_pos, lexem: "{{".to_string() };
                             }
                         }
-        
+
                         txt.push(ch);
-                        break;
+                    }
+                    '\n' => {
+                        self.source_code.next();
+                        txt.push(ch);
+                        self.current_pos += 1;
                     }
                     _ => {
                         self.source_code.next();
