@@ -2,12 +2,13 @@ use std::{str::Chars, iter::Peekable, collections::HashMap};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum MdTokenType {
+    MdText,
     Identifier(String),
     String(String),
     Number(i64),
     Operator(char),
-    LeftBracket,
-    RightBracket,
+    CodeStart,
+    CodeEnd,
     EndStatement,
     If,
     Then,
@@ -32,6 +33,7 @@ pub struct MdLexer<'a> {
     pub tokens: Vec<MdToken>,
     current_pos: i64,
     keywords: HashMap<&'a str, MdTokenType>,
+    is_code_bloc: bool,
 }
 
 // keywords: Map<String, TokenType>;
@@ -53,6 +55,7 @@ impl<'a> MdLexer<'a> {
             tokens: Vec::new(),
             current_pos: 1,
             keywords: kw,
+            is_code_bloc: false,
         }
     }
 
@@ -119,6 +122,33 @@ impl<'a> MdLexer<'a> {
     }
 
     fn next_token(&mut self) -> MdToken {
+        if !self.is_code_bloc {
+            let mut txt = String::new();
+            while let Some(&ch) = self.source_code.peek() {
+                match ch {
+                    '{' => {
+                        self.source_code.next();
+                        if let Some(&ch2) = self.source_code.peek() {
+                            if ch2 == '{' {
+                                self.source_code.next();
+                                self.is_code_bloc = true;
+                                return MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt };
+                                // return MdToken { token_type: MdTokenType::CodeStart, line: self.current_pos, lexem: "{{".to_string() };
+                            }
+                        }
+        
+                        txt.push(ch);
+                        break;
+                    }
+                    _ => {
+                        self.source_code.next();
+                        txt.push(ch);
+                    }
+                }                
+            }
+            return MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt };
+        }
+
         self.consume_whitespace();
 
         if let Some(&ch) = self.source_code.peek() {
@@ -146,13 +176,17 @@ impl<'a> MdLexer<'a> {
                     self.source_code.next();
                     return MdToken { token_type: MdTokenType::Operator(ch), line: self.current_pos, lexem: ch.to_string() };
                 }
-                '{' => {
-                    self.source_code.next();
-                    return MdToken { token_type: MdTokenType::LeftBracket, line: self.current_pos, lexem: ch.to_string() };
-                }
+                
                 '}' => {
                     self.source_code.next();
-                    return MdToken { token_type: MdTokenType::RightBracket, line: self.current_pos, lexem: ch.to_string() };
+                    if let Some(&ch2) = self.source_code.peek() {
+                        if ch2 == '}' {
+                            self.source_code.next();
+                            return MdToken { token_type: MdTokenType::CodeStart, line: self.current_pos, lexem: "{{".to_string() };
+                        }
+                    }
+
+                    return MdToken { token_type: MdTokenType::CodeEnd, line: self.current_pos, lexem: ch.to_string() };
                 }
                 ';' => {
                     self.source_code.next();
