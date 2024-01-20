@@ -69,8 +69,6 @@ impl<'a> MdLexer<'a> {
         while let Some(&ch) = self.source_code.peek() {
             if ch == '\n' {
                 self.current_pos += 1;
-                self.source_code.next();
-                break;
             }
             else if !ch.is_whitespace() {
                 break;
