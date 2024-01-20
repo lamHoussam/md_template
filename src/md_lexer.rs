@@ -34,6 +34,11 @@ pub struct MdToken {
     lexem: String,
 }
 
+#[derive(Debug)]
+enum LexerError {
+    UnknownChar(MdToken)
+}
+
 pub struct MdLexer<'a> {
     source_code: Peekable<Chars<'a>>,
     pub tokens: Vec<MdToken>,
@@ -155,11 +160,11 @@ impl<'a> MdLexer<'a> {
         txt
     }
 
-    fn next_token(&mut self) -> MdToken {
+    fn next_token(&mut self) -> Result<MdToken, LexerError> {
         // TODO: Refactor
         if !self.is_code_bloc {
             let txt = self.scan_md_txt();
-            return MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt };
+            return Ok(MdToken {token_type: MdTokenType::MdText, line: self.current_pos, lexem: txt });
         }
 
         self.consume_whitespace();
@@ -170,39 +175,39 @@ impl<'a> MdLexer<'a> {
                     let value = self.scan_identifier();
                     match self.keywords.get(value.as_str()) {
                         Some(ttype) => {
-                            return MdToken { token_type: ttype.clone(), line: self.current_pos, lexem: value };
+                            return Ok(MdToken { token_type: ttype.clone(), line: self.current_pos, lexem: value });
                         },
                         None => {
-                            return MdToken { token_type: MdTokenType::Identifier(value.clone()), line: self.current_pos, lexem: value };
+                            return Ok(MdToken { token_type: MdTokenType::Identifier(value.clone()), line: self.current_pos, lexem: value });
                         },
                     }
                 } 
                 '"' => {
                     let value = self.scan_string();
-                    return MdToken { token_type: MdTokenType::String(value.clone()), line: self.current_pos, lexem: value };
+                    return Ok(MdToken { token_type: MdTokenType::String(value.clone()), line: self.current_pos, lexem: value });
                 }
                 '0'..='9' => {
                     let value = self.scan_number_unparsed();
-                    return MdToken { token_type: MdTokenType::Number(value.parse().unwrap_or(0)), line: self.current_pos, lexem: value };
+                    return Ok(MdToken { token_type: MdTokenType::Number(value.parse().unwrap_or(0)), line: self.current_pos, lexem: value });
                 }
                 '+' | '-' | '*' | '/' => {
                     self.source_code.next();
-                    return MdToken { token_type: MdTokenType::Operator(ch), line: self.current_pos, lexem: ch.to_string() };
+                    return Ok(MdToken { token_type: MdTokenType::Operator(ch), line: self.current_pos, lexem: ch.to_string() });
                 }
                 ':' => {
                     self.source_code.next();
                     if let Some(&ch2) = self.source_code.peek() {
                         if ch2 == '=' {
                             self.source_code.next();
-                            return MdToken { token_type: MdTokenType::Assign, line: self.current_pos, lexem: ":=".to_string() };
+                            return Ok(MdToken { token_type: MdTokenType::Assign, line: self.current_pos, lexem: ":=".to_string() });
                         }
                     }
-                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
+                    return Ok(MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() });
                 }
                 '$' => {
                     self.source_code.next();
                     let identifier = self.scan_identifier();
-                    return MdToken { token_type: MdTokenType::Dereference, line: self.current_pos, lexem: identifier };
+                    return Ok(MdToken { token_type: MdTokenType::Dereference, line: self.current_pos, lexem: identifier });
                 }
                 '}' => {
                     self.source_code.next();
@@ -210,28 +215,28 @@ impl<'a> MdLexer<'a> {
                         if ch2 == '}' {
                             self.source_code.next();
                             self.is_code_bloc = false;
-                            return MdToken { token_type: MdTokenType::CodeEnd, line: self.current_pos, lexem: "}}".to_string() };
+                            return Ok(MdToken { token_type: MdTokenType::CodeEnd, line: self.current_pos, lexem: "}}".to_string() });
                         }
                     }
-                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
+                    return Err(LexerError::UnknownChar(MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() }));
                 }
                 ';' => {
                     self.source_code.next();
                     if let Some(&ch2) = self.source_code.peek() {
                         if ch2 == ';' {
                             self.source_code.next();
-                            return MdToken { token_type: MdTokenType::EndStatement, line: self.current_pos, lexem: ";;".to_string() };
+                            return Ok(MdToken { token_type: MdTokenType::EndStatement, line: self.current_pos, lexem: ";;".to_string() });
                         }
                     }
-                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
+                    return Err(LexerError::UnknownChar(MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() }));
                 }
                 _ => {
                     self.source_code.next();
-                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
+                    return Err(LexerError::UnknownChar(MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() }));
                 }
             }
         } else {
-            return MdToken { token_type: MdTokenType::EndOfFile, line: self.current_pos, lexem: String::new() };
+            return Ok(MdToken { token_type: MdTokenType::EndOfFile, line: self.current_pos, lexem: String::new() });
         }
     }
 
@@ -239,12 +244,21 @@ impl<'a> MdLexer<'a> {
     pub fn scan_tokens(&mut self) {
         loop {
             let token = self.next_token();
-            println!("{:?}", token);
-            if token.token_type == MdTokenType::EndOfFile {
-                break;
+            
+            match token {
+                Ok(tkn) => {
+                    println!("{:?}", tkn);
+                    if tkn.token_type == MdTokenType::EndOfFile {
+                        break;
+                    }
+        
+                    self.tokens.push(tkn);
+                },
+                Err(e) => {
+                    println!("Error: {:?}", e);
+                    break;
+                },
             }
-
-            self.tokens.push(token);
         }
     }
 }

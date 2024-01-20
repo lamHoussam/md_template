@@ -1,7 +1,7 @@
 mod md_lexer;
 
 // use crate::md_parser::{MdParser, Rule};
-use core::panic;
+use std::time::{Instant, Duration};
 use std::fs::{self, File};
 
 use clap::Parser as ClapParser;
@@ -26,16 +26,21 @@ struct Args {
 fn main() {
     
     let args = Args::parse();
-    
+
     // println!("Sample: {}, Output: {}", args.sample, args.output);
     
     let sample_file_path = args.sample.as_str();
     // let output_file_path = args.output.as_str();
-
+    
     let sample_file_content = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");
-    let mut scanner = MdLexer::new(&sample_file_content);
 
+    let start = Instant::now();
+    let mut scanner = MdLexer::new(&sample_file_content);
     scanner.scan_tokens();
+    let end = Instant::now();
+    let duration = end - start;
+
+    println!("Lexer execution time: {:?}", duration);
     // println!("{:#?}", scanner.tokens);
 
 
