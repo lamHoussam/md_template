@@ -19,6 +19,7 @@ pub enum MdTokenType {
     
     // 2 char Tokens
     Assign,
+    Dereference,
     CodeStart,
     CodeEnd,
     EndStatement,
@@ -200,6 +201,11 @@ impl<'a> MdLexer<'a> {
                     }
                     return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
                 }
+                '$' => {
+                    self.source_code.next();
+                    let identifier = self.scan_identifier();
+                    return MdToken { token_type: MdTokenType::Dereference, line: self.current_pos, lexem: identifier };
+                }
                 '}' => {
                     self.source_code.next();
                     if let Some(&ch2) = self.source_code.peek() {
@@ -213,7 +219,13 @@ impl<'a> MdLexer<'a> {
                 }
                 ';' => {
                     self.source_code.next();
-                    return MdToken { token_type: MdTokenType::EndStatement, line: self.current_pos, lexem: ch.to_string() };
+                    if let Some(&ch2) = self.source_code.peek() {
+                        if ch2 == ';' {
+                            self.source_code.next();
+                            return MdToken { token_type: MdTokenType::EndStatement, line: self.current_pos, lexem: ";;".to_string() };
+                        }
+                    }
+                    return MdToken { token_type: MdTokenType::Unknown(ch), line: self.current_pos, lexem: ch.to_string() };
                 }
                 _ => {
                     self.source_code.next();
