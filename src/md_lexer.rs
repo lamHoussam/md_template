@@ -13,6 +13,7 @@ pub enum MdTokenType {
     Else,
     Endif,
     For,
+    Do,
     Endfor,
     EndOfFile,
     Print,
@@ -29,7 +30,7 @@ pub enum MdTokenType {
 
 #[derive(Debug)]
 pub struct MdToken {
-    token_type: MdTokenType,
+    pub token_type: MdTokenType,
     line: i64,
     lexem: String,
 }
@@ -58,6 +59,7 @@ impl<'a> MdLexer<'a> {
         kw.insert("else", MdTokenType::Else);
         kw.insert("endif", MdTokenType::Endif);
         kw.insert("for", MdTokenType::For);
+        kw.insert("do", MdTokenType::Do);
         kw.insert("endfor", MdTokenType::Endfor);
         kw.insert("print", MdTokenType::Print);
 
@@ -241,24 +243,24 @@ impl<'a> MdLexer<'a> {
     }
 
 
-    pub fn scan_tokens(&mut self) {
+    pub fn scan_tokens(&mut self) -> Option<MdToken> {
         loop {
             let token = self.next_token();
-            
             match token {
                 Ok(tkn) => {
                     println!("{:?}", tkn);
                     if tkn.token_type == MdTokenType::EndOfFile {
-                        break;
+                        return Some(tkn);
                     }
         
                     self.tokens.push(tkn);
                 },
                 Err(e) => {
                     println!("Error: {:?}", e);
-                    break;
+                    return None;
                 },
             }
         }
+
     }
 }
