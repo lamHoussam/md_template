@@ -1,11 +1,12 @@
-use std::{str::Chars, iter::Peekable, collections::HashMap};
+use std::{str::Chars, iter::Peekable, collections::HashMap, fmt::Debug};
+
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum MdTokenType {
     MdText,
     Identifier(String),
     String(String),
-    Number(i64),
+    Number(i32),
     Operator(char),
     
     If,
