@@ -1,5 +1,5 @@
 use crate::md_lexer::{MdToken, MdTokenType};
-use std::collections::{HashMap, VecDeque};
+use std::{collections::{HashMap, VecDeque}, vec};
 
 // Define Operationals?
 
@@ -100,7 +100,7 @@ impl<'a> MdParser<'a> {
                         },
                         MdTokenType::True => {
                             loop {
-                                let sttment = self.parse_statement();
+                                let sttment: Statement = self.parse_statement();
                                 if sttment == Statement::None {
                                     break;
                                 }
@@ -116,7 +116,7 @@ impl<'a> MdParser<'a> {
                                     break;
                                 }
                             }
-                            return Statement::None;
+                            return Statement::IfStatement(vec![]);
                         },
                         _ => {
                             println!("Handle error");
@@ -136,12 +136,26 @@ impl<'a> MdParser<'a> {
                         return Statement::None;
                     }
 
+                    // TODO: Implement different data assign
+                    let mut left: String = String::new();
+                    let frst = self.tokens.pop_front().expect("Need token here");
+                    match frst.token_type {
+                        MdTokenType::String(val) => left.push_str(&val),
+                        _ => println!("Need string here"),
+                    }
                     loop {
                         let tk = self.tokens.pop_front().expect("Incomplete assignment");
-                        match tk.token_type {
-                            MdTokenType::String(litteral) => {
-                                return Statement::Assignment(Expr::Identifier(identifier), Expr::Litteral(Symbol::from(litteral)));
-                            }
+                        match tk.token_type { 
+                            MdTokenType::Operator('.') => {
+                                let nxt = self.tokens.pop_front().expect("Need right part for string concat");
+                                match nxt.token_type {
+                                    MdTokenType::String(val) => left.push_str(&val),
+                                    _ => println!("Cant concatenate string with other"),
+                                }
+                            },
+                            MdTokenType::EndStatement => {
+                                return Statement::Assignment(Expr::Identifier(identifier), Expr::Litteral(Symbol::from(left)));
+                            },
                             // Handle Error
                             _ => break,
                         }                        
@@ -150,7 +164,10 @@ impl<'a> MdParser<'a> {
                     return Statement::None;
                 },
                 MdTokenType::EndOfFile => Statement::None,
-                _ => Statement::None,
+                _ => {
+                    println!("Problems: {:?}", token);
+                    Statement::None
+                },
             };
         }
 
