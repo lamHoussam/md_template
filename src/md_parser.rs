@@ -7,14 +7,15 @@ use std::collections::{HashMap, VecDeque};
 enum Expr {
     Litteral(Symbol),
     Identifier(String),
+    Operation(Box<Expr>, char, Box<Expr>),
     None,
 }
 
 #[derive(Debug, PartialEq)]
 enum Statement {
     Assignment(Expr, Expr),
-    IfStatement(Box<Expr>, Vec<Statement>, Vec<Statement>),
-    ForLoop(String, Expr, Vec<Statement>),
+    IfStatement(Vec<Statement>),
+    ForLoop(Vec<Statement>),
     PrintStatement(Expr),
     Expr(Expr),
     None,
@@ -82,6 +83,47 @@ impl<'a> MdParser<'a> {
         if let Some(token) = self.tokens.pop_front() {
             match token.token_type {
                 MdTokenType::If => {
+                    let mut condition: Vec<MdToken> = Vec::new();
+                    loop {
+                        let tk = self.tokens.pop_front().expect("Error");
+                        if tk.token_type == MdTokenType::Then {
+                            break;
+                        }
+                        condition.push(tk);
+                    }
+                    // For now we only take one token as condition, later need to implement Operations
+                    let cond = condition.first().expect("Error");
+                    let mut statements: Vec<Statement> = Vec::new();
+                    match cond.token_type {
+                        MdTokenType::Dereference => {
+                            // TODO: Evaluate dereferenced value
+                        },
+                        MdTokenType::True => {
+                            loop {
+                                let sttment = self.parse_statement();
+                                if sttment == Statement::None {
+                                    break;
+                                }
+                                statements.push(sttment);
+                            }
+
+                            return Statement::IfStatement(statements);
+                        },
+                        MdTokenType::False => {
+                            loop {
+                                let tk = self.tokens.pop_front().expect("msg");
+                                if tk.token_type == MdTokenType::Else || tk.token_type == MdTokenType::Endif {
+                                    break;
+                                }
+                            }
+                            return Statement::None;
+                        },
+                        _ => {
+                            println!("Handle error");
+                            return Statement::None;
+                        }
+                    }                    
+
                     return Statement::None;
                 },
                 MdTokenType::Endfor => {
@@ -118,7 +160,7 @@ impl<'a> MdParser<'a> {
     pub fn parse(&mut self) {
         loop {
             let statement = self.parse_statement();
-            println!("{:?}", statement);
+            println!("{:#?}", statement);
             if statement == Statement::End {
                 break;
             }
