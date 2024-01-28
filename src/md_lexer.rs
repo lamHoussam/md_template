@@ -19,6 +19,8 @@ pub enum MdTokenType {
     Endfor,
     EndOfFile,
     Print,
+    True,
+    False,
     
     // 2 char Tokens
     Assign,
@@ -65,6 +67,8 @@ impl<'a> MdLexer<'a> {
         kw.insert("do", MdTokenType::Do);
         kw.insert("endfor", MdTokenType::Endfor);
         kw.insert("print", MdTokenType::Print);
+        kw.insert("True", MdTokenType::True);
+        kw.insert("False", MdTokenType::False);
 
         MdLexer {
             source_code: input.chars().peekable(),
