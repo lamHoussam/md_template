@@ -1,4 +1,4 @@
-use std::{str::Chars, iter::Peekable, collections::HashMap, fmt::Debug};
+use std::{str::Chars, iter::Peekable, collections::{HashMap, LinkedList, self, VecDeque}, fmt::Debug};
 
 
 #[derive(Debug, PartialEq, Clone)]
@@ -43,7 +43,7 @@ enum LexerError {
 
 pub struct MdLexer<'a> {
     source_code: Peekable<Chars<'a>>,
-    pub tokens: Vec<MdToken>,
+    pub tokens: VecDeque<MdToken>,
     current_pos: i64,
     keywords: HashMap<&'a str, MdTokenType>,
     is_code_bloc: bool,
@@ -66,7 +66,7 @@ impl<'a> MdLexer<'a> {
 
         MdLexer {
             source_code: input.chars().peekable(),
-            tokens: Vec::new(),
+            tokens: VecDeque::new(),
             current_pos: 1,
             keywords: kw,
             is_code_bloc: false,
@@ -254,7 +254,7 @@ impl<'a> MdLexer<'a> {
                         return Some(tkn);
                     }
         
-                    self.tokens.push(tkn);
+                    self.tokens.push_back(tkn);
                 },
                 Err(e) => {
                     println!("Error: {:?}", e);

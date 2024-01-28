@@ -1,4 +1,5 @@
 mod md_lexer;
+mod md_parser;
 
 // use crate::md_parser::{MdParser, Rule};
 use std::time::{Instant, Duration};
@@ -34,13 +35,22 @@ fn main() {
     
     let sample_file_content = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");
 
-    let start = Instant::now();
+    let mut start = Instant::now();
+    println!("Start Lexer");
     let mut scanner = MdLexer::new(&sample_file_content);
     scanner.scan_tokens();
-    let end = Instant::now();
-    let duration = end - start;
-
+    let mut end = Instant::now();
+    let mut duration = end - start;
     println!("Lexer execution time: {:?}", duration);
+
+    println!("Start Parser");
+    start = Instant::now();
+    let mut parser = md_parser::MdParser::new(&mut scanner.tokens);
+    parser.parse();
+    end = Instant::now();
+    duration = end - start;
+    println!("Parser execution time {:?}", duration);
+
     // println!("{:#?}", scanner.tokens);
 
 
