@@ -14,6 +14,7 @@ pub enum MdTokenType {
     Else,
     Endif,
     For,
+    In,
     Do,
     Endfor,
     EndOfFile,
@@ -60,6 +61,7 @@ impl<'a> MdLexer<'a> {
         kw.insert("else", MdTokenType::Else);
         kw.insert("endif", MdTokenType::Endif);
         kw.insert("for", MdTokenType::For);
+        kw.insert("in", MdTokenType::In);
         kw.insert("do", MdTokenType::Do);
         kw.insert("endfor", MdTokenType::Endfor);
         kw.insert("print", MdTokenType::Print);
@@ -193,7 +195,7 @@ impl<'a> MdLexer<'a> {
                     let value = self.scan_number_unparsed();
                     return Ok(MdToken { token_type: MdTokenType::Number(value.parse().unwrap_or(0)), line: self.current_pos, lexem: value });
                 }
-                '+' | '-' | '*' | '/' => {
+                '+' | '-' | '*' | '/' | '.' => {
                     self.source_code.next();
                     return Ok(MdToken { token_type: MdTokenType::Operator(ch), line: self.current_pos, lexem: ch.to_string() });
                 }
