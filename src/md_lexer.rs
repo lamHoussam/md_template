@@ -8,6 +8,7 @@ pub enum MdTokenType {
     String(String),
     Number(i32),
     Operator(char),
+    Dereference,
     
     If,
     Then,
@@ -24,7 +25,6 @@ pub enum MdTokenType {
     
     // 2 char Tokens
     Assign,
-    Dereference,
     CodeStart,
     CodeEnd,
     EndStatement,
@@ -35,8 +35,8 @@ pub enum MdTokenType {
 #[derive(Debug)]
 pub struct MdToken {
     pub token_type: MdTokenType,
-    line: i64,
-    lexem: String,
+    pub lexem: String,
+    pub line: i64,
 }
 
 #[derive(Debug)]
