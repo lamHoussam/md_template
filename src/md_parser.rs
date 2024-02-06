@@ -19,7 +19,7 @@ enum Statement {
     PrintStatement(Expr),
     Expr(Expr),
     None,
-    End,
+    End(MdTokenType),
 }
 
 #[derive(Debug, PartialEq)]
@@ -68,20 +68,22 @@ impl<'a> MdParser<'a> {
     // fn parse_if_statement(&mut self) {
     //     let condition = self.tokens.pop_front().expect("If needs condition");
     //     if condition.token_type == MdTokenType::Dereference {
-    //         let expr = self.parse_expression();
-    //         println!("Expr: {:?}", expr);
-    //     }
+        //         let expr = self.parse_expression();
+        //         println!("Expr: {:?}", expr);
+        //     }
 
         
-    // }
+        // }
 
     fn parse_assignment(&mut self) {
-
+        
     }
-
+    
     fn parse_statement(&mut self) -> Statement {
         if let Some(token) = self.tokens.pop_front() {
+            println!("Will check token: {:?}", token.token_type);
             match token.token_type {
+                MdTokenType::EndOfFile => { return Statement::End(token.token_type) },
                 MdTokenType::If => {
                     let mut condition: Vec<MdToken> = Vec::new();
                     loop {
@@ -99,13 +101,30 @@ impl<'a> MdParser<'a> {
                             // TODO: Evaluate dereferenced value
                         },
                         MdTokenType::True => {
+                            let mut if_count = 0;
                             loop {
                                 let sttment: Statement = self.parse_statement();
-                                if sttment == Statement::None {
+                                if sttment == Statement::End(MdTokenType::Else) {
                                     break;
+                                }
+                                else if sttment == Statement::End(MdTokenType::Endif) {
+                                    return Statement::IfStatement(statements);
                                 }
                                 statements.push(sttment);
                             }
+                            if_count = 0;
+                            loop {
+                                // TODO: Add a stack or count so that it ends at the correct if
+                                let tk = self.tokens.pop_front().expect("msg");
+                                println!("Inside else token: {:?}", tk.token_type);
+                                if tk.token_type == MdTokenType::If { if_count += 1; }
+                                // println!("Token: {:?}", tk);
+                                if tk.token_type == MdTokenType::Endif {
+                                    if if_count == 0 { break; }
+                                    if_count -= 1;
+                                }
+                            }
+                            println!("Got if statement");
 
                             return Statement::IfStatement(statements);
                         },
@@ -126,8 +145,8 @@ impl<'a> MdParser<'a> {
 
                     return Statement::None;
                 },
-                MdTokenType::Endfor => {
-                    return Statement::End;
+                MdTokenType::Endfor | MdTokenType::Endif | MdTokenType::Else => {
+                    return Statement::End(token.token_type);
                 },
                 MdTokenType::Identifier(identifier) => {
                     let op = self.tokens.pop_front().expect("Need operator here");
@@ -163,22 +182,20 @@ impl<'a> MdParser<'a> {
 
                     return Statement::None;
                 },
-                MdTokenType::EndOfFile => Statement::None,
                 _ => {
-                    println!("Problems: {:?}", token);
-                    Statement::None
+                    // println!("Problems: {:?}", token);
+                    return Statement::None;
                 },
-            };
+            }
         }
-
-        return Statement::None;
+        else { return Statement::End(MdTokenType::EndOfFile); }
     }
 
     pub fn parse(&mut self) {
         loop {
             let statement = self.parse_statement();
-            println!("{:#?}", statement);
-            if statement == Statement::End {
+            println!("Statement: {:#?}", statement);
+            if statement == Statement::End(MdTokenType::EndOfFile) {
                 break;
             }
         }
