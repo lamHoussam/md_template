@@ -64,6 +64,27 @@ impl<'a> MdParser<'a> {
             _ => Expr::None,
         }
     }
+
+    fn parse_string(&mut self, final_string: &mut String) {
+        loop {
+            let tk = self.tokens.pop_front().expect("Incomplete assignment");
+            match tk.token_type { 
+                MdTokenType::Operator('.') => {
+                    let nxt = self.tokens.pop_front().expect("Need right part for string concat");
+                    match nxt.token_type {
+                        MdTokenType::String(val) => final_string.push_str(&val),
+                        _ => println!("Cant concatenate string with other"),
+                    }
+                },
+                MdTokenType::EndStatement => {
+                    return;
+                },
+                // Handle Error
+                _ => break,
+            } 
+        }
+        
+    }
     
     fn parse_assignment(&mut self, identifier: String) -> Statement {
         let op = self.tokens.pop_front().expect("Need operator here");
@@ -71,33 +92,19 @@ impl<'a> MdParser<'a> {
         if op.token_type != MdTokenType::Assign {
             return Statement::None;
         }
-    
+        
         // TODO: Implement different data assign
         let mut left: String = String::new();
         let frst = self.tokens.pop_front().expect("Need token here");
         match frst.token_type {
-            MdTokenType::String(val) => left.push_str(&val),
+            MdTokenType::String(val) => {
+                left.push_str(&val);
+            },
             _ => println!("Need string here"),
         }
-        loop {
-            let tk = self.tokens.pop_front().expect("Incomplete assignment");
-            match tk.token_type { 
-                MdTokenType::Operator('.') => {
-                    let nxt = self.tokens.pop_front().expect("Need right part for string concat");
-                    match nxt.token_type {
-                        MdTokenType::String(val) => left.push_str(&val),
-                        _ => println!("Cant concatenate string with other"),
-                    }
-                },
-                MdTokenType::EndStatement => {
-                    return Statement::Assignment(Expr::Identifier(identifier), Expr::Litteral(Symbol::from(left)));
-                },
-                // Handle Error
-                _ => break,
-            }                        
-        }
-    
-        return Statement::None;
+        
+        self.parse_string(&mut left);
+        return Statement::Assignment(Expr::Identifier(identifier), Expr::Litteral(Symbol::from(left)));
     }
     
     fn parse_if_statement(&mut self) -> Statement {
@@ -164,7 +171,23 @@ impl<'a> MdParser<'a> {
     }
 
     fn parse_print_statement(&mut self) -> Statement {
+        let mut printed_value: String = String::new();
         let tk = self.tokens.pop_front().expect("msg");
+        match tk.token_type {
+            MdTokenType::Dereference => {
+
+            }, 
+            MdTokenType::String(value)=> {
+                printed_value.push_str(&value);
+                self.parse_string(&mut printed_value);
+
+                return Statement::PrintStatement(Expr::Litteral(Symbol::StringValue(printed_value)))
+            },
+            _ => {
+
+            }
+        }
+
         // println!("Print token: {:?}", tk.token_type);
         return Statement::PrintStatement(Expr::Identifier(tk.lexem));
     }
@@ -190,7 +213,6 @@ impl<'a> MdParser<'a> {
                     return self.parse_assignment(identifier);
                 },
                 _ => {
-                    // println!("Problems: {:?}", token);
                     return Statement::None;
                 },
             }

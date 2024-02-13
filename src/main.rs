@@ -36,29 +36,19 @@ fn main() {
     let sample_file_content = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");
 
     let mut start = Instant::now();
-    println!("Start Lexer");
+    println!("------------------ Start Lexer ------------------------");
     let mut scanner = MdLexer::new(&sample_file_content);
     scanner.scan_tokens();
     let mut end = Instant::now();
     let mut duration = end - start;
-    println!("Lexer execution time: {:?}", duration);
+    println!("[] -> Lexer execution time: {:?}", duration);
 
-    println!("Start Parser");
+    println!("------------------ Start Parser -----------------------");
     start = Instant::now();
     let mut parser = md_parser::MdParser::new(&mut scanner.tokens);
     parser.parse();
     end = Instant::now();
     duration = end - start;
-    println!("Parser execution time {:?}", duration);
+    println!("[] -> Parser execution time {:?}", duration);
 
-    // println!("{:#?}", scanner.tokens);
-
-
-    // let mut output_file = match File::create(output_file_path) {
-    //     Ok(file) => file,
-    //     Err(_) => panic!("Couldn't create output file"),
-    // };
-
-    // let data_file_path = args.data.unwrap_or_default();
-    // let data_file_content = fs::read_to_string(data_file_path).unwrap_or_default();
 }
