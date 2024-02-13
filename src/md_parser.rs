@@ -102,7 +102,7 @@ impl<'a> MdParser<'a> {
             },
             _ => println!("Need string here"),
         }
-        
+
         self.parse_string(&mut left);
         return Statement::Assignment(Expr::Identifier(identifier), Expr::Litteral(Symbol::from(left)));
     }
@@ -229,8 +229,10 @@ impl<'a> MdParser<'a> {
                     }
                 }
             },
-            Statement::IfStatement(statments) => {
-
+            Statement::IfStatement(in_statements) => {
+                for sttmnt in in_statements {
+                    self.execute_statement(sttmnt);
+                }
             },
             Statement::ForLoop(statements) => {
                 
