@@ -167,7 +167,6 @@ impl<'a> MdParser<'a> {
     
     fn parse_for_statement(&mut self) -> Statement {
         return Statement::None;
-
     }
 
     fn parse_print_statement(&mut self) -> Statement {
@@ -220,6 +219,30 @@ impl<'a> MdParser<'a> {
         else { return Statement::End(MdTokenType::EndOfFile); }
     }
 
+    fn execute_statement(&mut self, statement: Statement) {
+        match statement {
+            Statement::None => (),
+            Statement::Assignment(identifier, value) => {
+                if let Expr::Identifier(var_name) = identifier {
+                    if let Expr::Litteral(symbol_value) = value {
+                        self.global_variables.insert(var_name, symbol_value);
+                    }
+                }
+            },
+            Statement::IfStatement(statments) => {
+
+            },
+            Statement::ForLoop(statements) => {
+                
+            },
+            Statement::PrintStatement(printed_value) => {
+                
+            },
+            Statement::End(_) => (),
+            Statement::Expr(_) => todo!(),
+        }
+    }
+
     pub fn parse(&mut self) {
         loop {
             let statement = self.parse_statement();
@@ -227,6 +250,9 @@ impl<'a> MdParser<'a> {
             if statement == Statement::End(MdTokenType::EndOfFile) {
                 break;
             }
+            self.execute_statement(statement);
         }
+
+        println!("Parser variables: {:?}", self.global_variables);
     }
 }

@@ -255,7 +255,7 @@ impl<'a> MdLexer<'a> {
             let token = self.next_token();
             match token {
                 Ok(tkn) => {
-                    println!("{:?}", tkn);
+                    // println!("{:?}", tkn);
                     if tkn.token_type == MdTokenType::EndOfFile {
                         return Some(tkn);
                     }

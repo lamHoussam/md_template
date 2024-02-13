@@ -35,20 +35,20 @@ fn main() {
     
     let sample_file_content = fs::read_to_string(sample_file_path).expect("Failed to read sample file.");
 
+    println!("------------------------Start Lexer------------------------");
     let mut start = Instant::now();
-    println!("------------------ Start Lexer ------------------------");
     let mut scanner = MdLexer::new(&sample_file_content);
     scanner.scan_tokens();
     let mut end = Instant::now();
     let mut duration = end - start;
-    println!("[] -> Lexer execution time: {:?}", duration);
+    println!("---------------------Lexer execution time: {:?}---------------------", duration);
 
-    println!("------------------ Start Parser -----------------------");
+    println!("------------------------Start Parser------------------------");
     start = Instant::now();
     let mut parser = md_parser::MdParser::new(&mut scanner.tokens);
     parser.parse();
     end = Instant::now();
     duration = end - start;
-    println!("[] -> Parser execution time {:?}", duration);
+    println!("---------------------Parser execution time {:?}---------------------", duration);
 
 }
